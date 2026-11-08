@@ -1,5 +1,6 @@
 const path = require('path');
 const hubbleRoutes = require('./hubble-routes');
+const configRoutes = require('./config-routes');
 const pockethookRoutes = require('./pockethook_routes');
 const fs = require('fs');
 const Fastify = require('fastify');
@@ -161,6 +162,7 @@ async function build() {
   if (typeof gpsRoutes === 'function') { await fastify.register(gpsRoutes); }
   await fastify.register(statik, { root: path.join(__dirname, 'public'), prefix: '/' });
   await fastify.register(hubbleRoutes);
+  await fastify.register(configRoutes);
   await fastify.register(pockethookRoutes);
   return fastify;
 }
