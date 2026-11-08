@@ -1,7 +1,7 @@
 {
-  "name": "NEXUS-SENTINEL // Anduril Hubble",
-  "short_name": "NEXUS",
-  "description": "Centro de mando tactico de rastreo - NEXUS-SENTINEL",
+  "name": "NEXUS-MITHRIL // Tracker Personal",
+  "short_name": "MITHRIL",
+  "description": "Dashboard familiar para monitoreo de dispositivos propios.",
   "start_url": "/fleet.html",
   "scope": "/",
   "display": "standalone",

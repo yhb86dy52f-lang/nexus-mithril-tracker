@@ -1,7 +1,7 @@
 {
-  "name": "anduril-hubble",
+  "name": "nexus-mithril-tracker",
   "version": "6.0.1",
-  "description": "ANDURIL HUBBLE - Proyecto personal de rastreo SMS + BLE. Nombre inspirado en Anduril de Tolkien, sin afiliacion a Anduril Industries.",
+  "description": "NEXUS-MITHRIL - Proyecto personal de monitoreo de dispositivos propios con GPS + BLE. Uso doméstico e ingeniería.",
   "type": "commonjs",
   "main": "server.js",
   "scripts": {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ANDURIL HUBBLE — Centro de Mando</title>
+<title>NEXUS-MITHRIL — Dashboard Personal</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0B0B12">
 <meta name="mobile-web-app-capable" content="yes">
@@ -28,7 +28,6 @@ button,input{font-family:inherit}
 a{color:inherit}
 #app{display:flex;flex-direction:column;height:100vh;width:100vw}
 
-/* HEADER */
 .header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 18px;background:var(--bg2);border-bottom:1px solid var(--line);z-index:2000}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#A855F7,#7C3AED);display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;letter-spacing:.5px;flex-shrink:0}
@@ -47,10 +46,8 @@ a{color:inherit}
 .clock b{color:var(--txt);font-size:13px}
 #api-status{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--green);font-weight:700}
 
-/* MAIN */
 .main{flex:1;display:flex;min-height:0;position:relative}
 
-/* SIDEBAR */
 .sidebar{width:340px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;z-index:1500}
 .side-head{padding:14px 14px 10px;border-bottom:1px solid var(--line)}
 .side-head-top{display:flex;justify-content:space-between;align-items:center}
@@ -88,7 +85,6 @@ a{color:inherit}
 .dev-stats{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
 .dev-stats b{color:var(--txt)}
 
-/* MAP */
 .map-wrap{flex:1;position:relative;background:#05030A;min-width:0}
 #map{width:100%;height:100%}
 .leaflet-layer{filter:invert(100%) hue-rotate(180deg) brightness(96%) contrast(92%) saturate(.75)}
@@ -100,7 +96,6 @@ a{color:inherit}
 .legend-dot{width:10px;height:10px;border-radius:50%}
 .map-attrib{position:absolute;right:14px;bottom:14px;z-index:1000;background:rgba(17,17,28,.9);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:11px;color:var(--muted)}
 
-/* DETAIL PANEL */
 .info-panel{width:360px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);display:none;flex-direction:column;min-height:0;z-index:1800}
 .info-panel.open{display:flex}
 .info-head{padding:16px 16px 12px;border-bottom:1px solid var(--line)}
@@ -135,13 +130,11 @@ a{color:inherit}
 .timeline-item b{display:block;font-size:12px}
 .timeline-item span{color:var(--muted);font-size:11px}
 
-/* ALERTS */
 #alert-container{position:absolute;top:14px;right:374px;z-index:2500;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:320px}
 .alert-box{background:#FFF1F2;border:1px solid #FECDD3;color:#881337;padding:12px 13px;border-radius:12px;font-size:12px;line-height:1.5;box-shadow:var(--shadow);pointer-events:auto}
 .alert-box b{font-size:11px;letter-spacing:.08em}
 .alert-box.success{background:#F0FDF4;border-color:#BBF7D0;color:#14532D}
 
-/* TIME SLIDER */
 .timeslider{height:68px;flex-shrink:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 14px;z-index:2000}
 .ts-btn{height:36px;min-width:72px;padding:0 14px;border-radius:999px;border:none;background:var(--txt);color:#111;font-weight:800;font-size:12px;cursor:pointer}
 .ts-btn.secondary{background:#22223A;color:var(--txt);border:1px solid var(--line2)}
@@ -149,7 +142,6 @@ a{color:inherit}
 #ts-info{font-family:"JetBrains Mono",monospace;font-size:11px;color:#A5F3FC;min-width:280px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ts-live{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--green);border:1px solid #1E3A28;background:#12261A;padding:6px 9px;border-radius:999px}
 
-/* MOBILE */
 @media(max-width:900px){
   .sidebar{position:absolute;top:0;bottom:0;left:0;transform:translateX(-105%);transition:.25s;box-shadow:var(--shadow)}
   .sidebar.open{transform:translateX(0)}
@@ -175,11 +167,11 @@ a{color:inherit}
   <header class="header">
     <div class="brand">
       <div class="logo">AH</div>
-      <div class="brand-txt"><b>ANDURIL HUBBLE</b><span>CENTRO DE MANDO &middot; NEXUS-SENTINEL</span></div>
+      <div class="brand-txt"><b>NEXUS-MITHRIL</b><span>TRACKER PERSONAL &middot; NEXUS</span></div>
     </div>
     <nav class="nav" aria-label="Vista">
       <button class="nav-btn active" id="btn-map-view" onclick="showMapView()">MAPA</button>
-      <button class="nav-btn" id="btn-list-view" onclick="showFleetView()">FLOTA</button>
+      <button class="nav-btn" id="btn-list-view" onclick="showFleetView()">FLOTA</button><button class="nav-btn" style="color:#FF2EA6; border-color:#FF2EA6;" onclick="window.location.href='/diagnostico.html'">🔬 LABORATORIO</button>
       <button class="btn-danger" onclick="apagarSistema()">APAGAR</button>
     </nav>
     <div class="head-right">
@@ -207,10 +199,8 @@ a{color:inherit}
         <button class="filter-btn active" data-filter="all" onclick="setSourceFilter('all', event)">TODOS <small id="count-all">0</small></button>
         <button class="filter-btn" data-filter="sms" onclick="setSourceFilter('sms', event)">SMS <small id="count-sms">0</small></button>
         <button class="filter-btn" data-filter="hubble" onclick="setSourceFilter('hubble', event)">HUBBLE <small id="count-hubble">0</small></button>
-        <button class="filter-btn" data-filter="tel" onclick="setSourceFilter('tel', event)">TEL <small id="count-tel">0</small></button>
       </div>
       <div id="device-list" aria-live="polite"></div>
-      <div style="padding:0 14px 14px;font-size:11px;color:var(--muted);line-height:1.6">Consejo: haz clic en una unidad para ver su detalle. Usa el slider inferior para reproducir su recorrido.</div>
     </aside>
 
     <section class="map-wrap">
@@ -225,7 +215,7 @@ a{color:inherit}
         <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span> Fuera de linea</span>
         <span class="legend-item"><span class="legend-dot" style="background:#A855F7"></span> Seleccionado</span>
       </div>
-      <div class="map-attrib" id="map-attrib">Torreon, Coahuila &middot; Mapa en vivo</div>
+      <div class="map-attrib" id="map-attrib">NEXUS-MITHRIL &middot; Mapa en vivo</div>
       <div id="alert-container"></div>
     </section>
 
@@ -249,7 +239,11 @@ a{color:inherit}
   <div id="fleet-grid-view">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h2 style="font-size:18px">FLOTA // TODOS LOS DISPOSITIVOS</h2>
-      <button class="btn-row" onclick="loadPositions();renderFleetTable()">Actualizar Tabla</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-row" style="background:var(--purple);color:#fff;border-color:var(--purple)" onclick="exportarCSV()">Exportar CSV</button>
+        <button class="btn-row" onclick="generarReporte()">Reporte de Turno</button>
+        <button class="btn-row" onclick="loadPositions();renderFleetTable()">Actualizar Tabla</button>
+      </div>
     </div>
     <table class="fleet-table">
       <thead>
@@ -258,9 +252,9 @@ a{color:inherit}
           <th>Dispositivo</th>
           <th>Fuente</th>
           <th>Latitud / Longitud</th>
-          <th>RSSI</th>
           <th>Velocidad</th>
-          <th>Temp</th>
+          <th>Voltaje</th>
+          <th>Sensores</th>
           <th>Última Actualización</th>
           <th>Acciones</th>
         </tr>
@@ -279,19 +273,22 @@ a{color:inherit}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ===== CONFIG =====
 const API = '';
 const HEADERS = {};
 let map, markers = {}, allPositions = [], filteredPositions = [];
 let currentSearch = '', currentSourceFilter = 'all', selectedId = null;
 let timeHistory = [], timeIdx = 0, timePlaying = false, timeTimer = null, timeMarker = null;
 
+// ===== RELOJ Y TIMEAGO =====
 function timeAgo(ts) {
   if (!ts) return 'SIN DATOS';
   const now = Date.now();
   const then = new Date(ts).getTime();
   if (isNaN(then)) return 'FECHA INVÁLIDA';
   const diffSecs = Math.floor((now - then) / 1000);
-  if (diffSecs < 60) return 'AHORA MISMO';
+  if (diffSecs < 0) return 'AHORA MISMO';
+  if (diffSecs < 60) return 'HACE ' + diffSecs + ' SEG';
   const diffMins = Math.floor(diffSecs / 60);
   if (diffMins < 60) return 'HACE ' + diffMins + ' MIN';
   const diffHours = Math.floor(diffMins / 60);
@@ -309,6 +306,7 @@ function tickClock(){
 }
 setInterval(tickClock, 1000); tickClock();
 
+// ===== MAPA =====
 map = L.map('map', {zoomControl:false}).setView([23.6345, -102.5528], 5);
 window.NEXUS_MAP = map;
 L.control.zoom({position:'bottomright'}).addTo(map);
@@ -321,11 +319,12 @@ const onlineIcon = makeIcon('#22C55E', true);
 const offlineIcon = makeIcon('#94A3B8', false);
 const selectedIcon = makeIcon('#A855F7', true);
 
+// ===== UTILS =====
 function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function isOnline(p){ try{ return ((new Date() - new Date(p.timestamp))/1000/60) < 15; }catch(e){ return false; } }
-function fmtTime(ts){ try{ return new Date(ts).toLocaleString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'short'}); }catch(e){ return String(ts||'--'); } }
 function fmtCoord(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(6) : '--'; }
 
+// ===== FILTROS / BUSQUEDA =====
 function setSourceFilter(f, evt){
   currentSourceFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
@@ -356,6 +355,7 @@ function centerOnFleet(){
   if(bounds.isValid()) map.fitBounds(bounds, {padding:[30,30]});
 }
 
+// ===== LISTA =====
 function renderList(){
   const list = document.getElementById('device-list');
   const total = allPositions.length;
@@ -368,7 +368,6 @@ function renderList(){
   document.getElementById('count-all').textContent = total;
   document.getElementById('count-sms').textContent = allPositions.filter(p=>(p.fuente||'sms').toLowerCase()==='sms').length;
   document.getElementById('count-hubble').textContent = allPositions.filter(p=>(p.fuente||'sms').toLowerCase()==='hubble').length;
-  document.getElementById('count-tel').textContent = allPositions.filter(p=>(p.fuente||'sms').toLowerCase()==='tel').length;
 
   if(!filteredPositions.length){
     list.innerHTML = '<div class="empty"><b>Sin unidades con este filtro</b><br>Prueba con TODOS o limpia la busqueda.<br><br><button class="filter-btn active" onclick="setSourceFilter(\'all\');clearSearch()">Ver todas</button></div>';
@@ -377,9 +376,9 @@ function renderList(){
   list.innerHTML = filteredPositions.map(p=>{
     const id = p.dispositivo_id || p.mid || '';
     const on = isOnline(p);
-    const vel = p.velocidad ?? p.speed ?? 0;
-    const temp = (p.temperatura ?? p.temp ?? '--');
-    const rssi = (p.rssi ?? '--');
+    const vel = p.velocidad ?? p.speed ?? null;
+    const temp = p.temperatura ?? p.temp ?? null;
+    const rssi = p.rssi ?? null;
     const active = (selectedId===id) ? ' active' : '';
     return '<article class="device-item'+active+'" data-id="'+esc(id)+'" onclick="focusDevice(\''+esc(id)+'\')">'
       + '<div class="dev-top"><div><div class="dev-name">'+esc(p.nombre||id)+'<small>ID: '+esc(id)+' &middot; '+esc((p.fuente||'sms').toUpperCase())+'</small></div></div><span class="badge '+(on?'on':'off')+'">'+(on?'EN LINEA':'FUERA')+'</span></div>'
@@ -389,28 +388,22 @@ function renderList(){
   }).join('');
 }
 
+// ===== MAPA =====
 function updateMap(){
   filteredPositions.forEach(p=>{
     const id = p.dispositivo_id || p.mid; if(!id) return;
     const on = isOnline(p);
     const ll = [Number(p.lat), Number(p.lon)];
     const icon = (selectedId===id) ? selectedIcon : (on ? onlineIcon : offlineIcon);
-    
-    if(markers[id]) { 
-        markers[id].setLatLng(ll).setIcon(icon); 
-    } else { 
-        markers[id] = L.marker(ll,{icon:icon}).addTo(map).on('click',()=>focusDevice(id)); 
-    }
+    if(markers[id]){ markers[id].setLatLng(ll).setIcon(icon); }
+    else{ markers[id] = L.marker(ll,{icon:icon}).addTo(map).on('click',()=>focusDevice(id)); }
   });
-  
   Object.keys(markers).forEach(id=>{
-    if(!filteredPositions.some(p=>(p.dispositivo_id||p.mid)===id)){ 
-        map.removeLayer(markers[id]); 
-        delete markers[id]; 
-    }
+    if(!filteredPositions.some(p=>(p.dispositivo_id||p.mid)===id)){ map.removeLayer(markers[id]); delete markers[id]; }
   });
 }
 
+// ===== DETALLE =====
 function focusDevice(id){
   const p = allPositions.find(x=>(x.dispositivo_id||x.mid)===id); if(!p) return;
   selectedId = id;
@@ -425,12 +418,19 @@ function focusDevice(id){
   const vel = p.velocidad ?? p.speed ?? null;
   const temp = p.temperatura ?? p.temp ?? null;
   const rssi = p.rssi ?? null;
+  
+  const voltajeHtml = (p.voltaje !== null && p.voltaje !== undefined) ? Number(p.voltaje).toFixed(2) + ' V' : 'N/D';
+  const sensoresHtml = p.estado_sensores || 'N/D';
+  const colorSensores = (sensoresHtml.includes('FALLA')) ? '#F43F5E' : '#22C55E';
+
   document.getElementById('info-data').innerHTML =
     '<div><div class="section-label">UBICACION EN VIVO</div><div class="stat-grid" style="margin-top:8px">'
     + '<div class="stat-box cyan"><label>LATITUD</label><b>'+fmtCoord(p.lat)+'</b><span>Grados decimales</span></div>'
     + '<div class="stat-box cyan"><label>LONGITUD</label><b>'+fmtCoord(p.lon)+'</b><span>Grados decimales</span></div>'
     + '<div class="stat-box"><label>VELOCIDAD</label><b>'+(vel !== null ? esc(String(vel))+' km/h' : 'SIN DATO')+'</b><span>Instantanea</span></div>'
     + '<div class="stat-box"><label>TEMPERATURA</label><b>'+(temp !== null ? esc(String(temp))+' &deg;C' : 'N/D')+'</b><span>Sensor</span></div>'
+    + '<div class="stat-box"><label>VOLTAJE</label><b>'+voltajeHtml+'</b><span>Batería</span></div>'
+    + '<div class="stat-box"><label>ESTADO SENSORES</label><b style="color:'+colorSensores+'">'+sensoresHtml+'</b><span>Diagnóstico</span></div>'
     + '<div class="stat-box"><label>SENAL (RSSI)</label><b>'+(rssi !== null ? esc(String(rssi))+' dBm' : 'N/D')+'</b><span>Intensidad</span></div>'
     + '<div class="stat-box"><label>ESTADO</label><b style="color:'+(on?'#22C55E':'#F43F5E')+'">'+(on?'EN LINEA':'FUERA')+'</b><span>Ult. 15 min</span></div>'
     + '</div></div>'
@@ -442,7 +442,6 @@ function focusDevice(id){
     + '<div><div class="section-label">ACTIVIDAD RECIENTE</div><div class="timeline" style="margin-top:10px">'
     + '<div class="timeline-item"><b>Posicion actualizada</b><span>'+timeAgo(p.timestamp)+' — Lat '+fmtCoord(p.lat)+', Lon '+fmtCoord(p.lon)+'</span></div>'
     + '<div class="timeline-item"><b>Sincronizado con el servidor</b><span>Canal: '+esc(String(p.fuente||'sms').toUpperCase())+' · RSSI '+(rssi !== null ? esc(String(rssi))+' dBm' : 'N/D')+'</span></div>'
-    + '<div class="timeline-item"><b>Listo para reproducir recorrido</b><span>Usa el Time Slider inferior y pulsa PLAY</span></div>'
     + '</div></div>'
     + '<div class="note">Si el dispositivo no responde, pulsa SOLICITAR ESTATUS REAL. El servidor enviara la orden y la unidad reportara en su siguiente ciclo.</div>';
   updateMap();
@@ -473,6 +472,7 @@ function showAlert(msg, ok){
   setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, 6000);
 }
 
+// ===== CARGA =====
 let lastSyncTime = Date.now();
 
 async function loadPositions() {
@@ -490,31 +490,37 @@ async function loadPositions() {
       if (hubRes.ok) {
         const h = await hubRes.json();
         hubbleData = h.filter(d => d.lat !== null && d.lon !== null).map(d => ({
-          dispositivo_id: d.device_id, nombre: d.name, lat: d.lat, lon: d.lon,
-          velocidad: 0, temperatura: null, fuente: 'hubble',
-          timestamp: new Date(d.last_packet_ts * 1000).toISOString(),
-          is_online: d.is_online, _hubble: true, _packet_count: d.packet_count, _network: d.network
+          dispositivo_id: d.device_id,
+          nombre: d.name,
+          lat: d.lat,
+          lon: d.lon,
+          velocidad: 0,
+          temperatura: null,
+          fuente: 'hubble',
+          timestamp: new Date(d.last_packet_ts * 1000).toISOString()
         }));
       }
     } catch (e) { console.warn('Hubble fetch failed', e); }
 
     localData = localData.filter(p => p.fuente !== 'hubble');
     allPositions = localData.concat(hubbleData);
-    lastSyncTime = Date.now();
-
-    document.getElementById('api-status').textContent = 'EN LINEA';
-    document.getElementById('api-status').style.color = '#86EFAC';
     
     const attrib = document.getElementById('map-attrib');
     if (attrib) {
         attrib.textContent = allPositions.length > 0 
-            ? `${allPositions.length} UNIDADES &middot; ACT. ${new Date().toLocaleTimeString('es-MX',{hour12:false})}`
-            : 'NEXUS-SENTINEL &middot; SIN UNIDADES REGISTRADAS';
+            ? `${allPositions.length} UNIDADES · ACT. ${new Date().toLocaleTimeString('es-MX',{hour12:false})}`
+            : 'NEXUS-MITHRIL · SIN UNIDADES';
     }
 
-    try { if (typeof filterList === 'function') filterList(); } catch(errMap) { console.warn('Error renderizando mapa:', errMap); }
+    document.getElementById('api-status').textContent = 'EN LINEA';
+    document.getElementById('api-status').style.color = '#86EFAC';
+    if (typeof filterList === 'function') filterList();
     
-    if (!window._hasCentered && allPositions.length > 0) { centerOnFleet(); window._hasCentered = true; }
+    if (!window._hasCentered && allPositions.length > 0) {
+        centerOnFleet();
+        window._hasCentered = true;
+    }
+
     if (selectedId) {
       const p = allPositions.find(x => (x.dispositivo_id || x.mid) === selectedId);
       if (p) focusDevice(selectedId);
@@ -613,9 +619,9 @@ function renderFleetTable() {
         html += '<td><b style="color:var(--cyan)">' + (p.nombre || id) + '</b><br><small style="color:var(--muted)">' + id + '</small></td>';
         html += '<td>' + String(p.fuente || 'sms').toUpperCase() + '</td>';
         html += '<td>' + Number(p.lat).toFixed(6) + ', ' + Number(p.lon).toFixed(6) + '</td>';
-        html += '<td><div style="height:4px;background:#333;width:60px;display:inline-block;vertical-align:middle;margin-right:8px"><div style="height:100%;width:' + pct + '%;background:' + col + '"></div></div> ' + (rssi !== null ? rssi + ' dBm' : 'N/D') + '</td>';
-        html += '<td>' + (p.velocidad != null ? p.velocidad : 'N/D') + ' km/h</td>';
-        html += '<td>' + (temp != null ? temp : 'N/D') + ' &deg;C</td>';
+        html += '<td>' + (p.velocidad != null ? p.velocidad : '0') + ' km/h</td>';
+        html += '<td>' + (p.voltaje != null ? p.voltaje + ' V' : 'N/D') + '</td>';
+        html += '<td><span style="color:' + ((p.estado_sensores||'').includes('FALLA')?'var(--red)':'var(--green)') + '">' + (p.estado_sensores || 'N/D') + '</span></td>';
         html += '<td>' + new Date(p.timestamp).toLocaleString('es-MX') + '</td>';
         html += '<td><button class="btn-row" onclick="showMapView();focusDevice(\'' + id + '\')">Ver en Mapa</button></td>';
         html += '</tr>';
@@ -623,12 +629,67 @@ function renderFleetTable() {
     tb.innerHTML = html;
 }
 
+function exportarCSV() {
+    if (!allPositions.length) { showAlert('No hay datos para exportar', false); return; }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ID,Nombre,Fuente,Latitud,Longitud,Velocidad,Voltaje,Sensores,Fecha\n";
+    
+    allPositions.forEach(p => {
+        let id = p.dispositivo_id || p.mid || '';
+        let nombre = (p.nombre || '').replace(/,/g, '');
+        let fuente = p.fuente || 'sms';
+        let lat = p.lat || 0;
+        let lon = p.lon || 0;
+        let vel = p.velocidad || 0;
+        let volt = p.voltaje || '';
+        let sens = (p.estado_sensores || '').replace(/,/g, '');
+        let fecha = p.timestamp || '';
+        
+        csvContent += `${id},${nombre},${fuente},${lat},${lon},${vel},${volt},${sens},${fecha}\n`;
+    });
+
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    let dateStr = new Date().toISOString().slice(0,10);
+    link.setAttribute("download", `reporte_flota_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert('Archivo CSV descargado', true);
+}
+
+function generarReporte() {
+    let ventana = window.open('', '_blank');
+    let fecha = new Date().toLocaleString('es-MX');
+    let html = `<html><head><title>Reporte de Turno - NEXUS</title>
+    <style>body{font-family:monospace;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px;} th{background:#f4f4f4;}</style>
+    </head><body>
+    <h2>REPORTE DE TURNO - NEXUS-MITHRIL</h2>
+    <p>Generado el: ${fecha}</p>
+    <table><thead><tr><th>Dispositivo</th><th>Lat/Lon</th><th>Velocidad</th><th>Voltaje</th><th>Sensores</th><th>Última Act.</th></tr></thead><tbody>`;
+    
+    allPositions.forEach(p => {
+        html += `<tr>
+            <td>${p.nombre || p.dispositivo_id}</td>
+            <td>${Number(p.lat).toFixed(4)}, ${Number(p.lon).toFixed(4)}</td>
+            <td>${p.velocidad || 0} km/h</td>
+            <td>${p.voltaje ? p.voltaje + 'V' : 'N/D'}</td>
+            <td style="color:${(p.estado_sensores||'').includes('FALLA')?'red':'green'}">${p.estado_sensores || 'N/D'}</td>
+            <td>${new Date(p.timestamp).toLocaleString()}</td>
+        </tr>`;
+    });
+    
+    html += `</tbody></table></body></html>`;
+    ventana.document.write(html);
+    ventana.document.close();
+    ventana.print();
+}
+
 loadPositions();
 setInterval(loadPositions, 5000);
-</script>
-<script src="/ws-client.js"></script>
-<script src="/time-slider.js"></script>
-<script>
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('/sw.js').then(function(reg){ console.log('[PWA] SW registrado', reg.scope); }).catch(function(err){ console.log('[PWA] SW fallo', err); });
