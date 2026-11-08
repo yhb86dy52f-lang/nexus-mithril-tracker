@@ -1,3 +1,4 @@
+require('dotenv').config();
 const path = require('path');
 const hubbleRoutes = require('./hubble-routes');
 const configRoutes = require('./config-routes');
@@ -173,3 +174,4 @@ async function main() {
 }
 if (require.main === module) { main(); }
 module.exports = { build };
+
