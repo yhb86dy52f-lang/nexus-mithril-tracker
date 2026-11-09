@@ -1,0 +1,16 @@
+node_modules/
+.env
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.log
+.DS_Store
+Thumbs.db
+public/sw.js
+*.bak-*
+
+temp_*
+
+server.js.bak*

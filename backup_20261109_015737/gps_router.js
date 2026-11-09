@@ -1,4 +1,4 @@
-const { insertGpsPosition } = require('./db');
+const { insertGpsPosition, saveRawSMS } = require('./db');
 const { checkDevice } = require('./geofence');
 const { broadcast } = require('./ws-broadcast');
 
@@ -15,7 +15,7 @@ module.exports = async function gpsRoutes(fastify, options) {
     let estado_sensores = null;
 
     if (texto) {
-      const midMatch = texto.match(/MID:\s*(\d+)/i) || texto.match(/ESN:\s*(\d+)/i);
+      const midMatch = texto.match(/MID:\s*([a-zA-Z0-9-]+)/i) || texto.match(/ESN:\s*([a-zA-Z0-9-]+)/i);
       if (midMatch) device = midMatch[1];
 
       const latLonMatch = texto.match(/LAT:\s*([-]?\d+\.\d+)\s*LON:\s*([-]?\d+\.\d+)/i) || texto.match(/([-]?\d{2,3}\.\d+)\s*[,;\s]\s*([-]?\d{2,3}\.\d+)/);
@@ -31,6 +31,9 @@ module.exports = async function gpsRoutes(fastify, options) {
     }
 
     if (body.lat !== undefined && body.lon !== undefined) { lat = Number(body.lat); lon = Number(body.lon); }
+
+        // Guardar el texto crudo (raw data) para auditoría
+    if (texto) { saveRawSMS(device, texto); }
 
     if (lat !== null && lon !== null) {
       if (!isValidLat(lat) || !isValidLon(lon)) return reply.status(400).send({ error: 'Coordenadas invalidas' });
@@ -62,3 +65,5 @@ module.exports = async function gpsRoutes(fastify, options) {
     return reply.send({ status: 'OK', message: 'SMS de estatus recibido' });
   });
 };
+
+

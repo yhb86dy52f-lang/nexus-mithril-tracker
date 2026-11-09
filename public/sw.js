@@ -1,5 +1,5 @@
-const CACHE = 'nexus-mithril-v69992'; // Versión forzada
-const ASSETS = ['/fleet.html', '/manifest.json'];
+const CACHE = 'nexus-mithril-v20261109023013';
+const ASSETS = ['/fleet.html', '/diagnostico.html', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -15,9 +15,16 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  if (e.request.url.includes('/fleet.html') || e.request.url.includes('/api/')) {
+  const url = e.request.url;
+  // CORREGIDO: /api/export/ NUNCA se cachea, es descarga. Siempre red.
+  if (url.includes('/api/export/')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+  if (url.includes('/api/') || url.includes('/fleet.html')) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
   } else {
     e.respondWith(caches.match(e.request).then((h) => h || fetch(e.request)));
   }
 });
+

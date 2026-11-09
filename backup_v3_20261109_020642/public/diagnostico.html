@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CT NEXUS // THERMO LAB (REAL)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B0B12;--bg2:#11111C;--panel:#141422;--panel2:#1A1A2B;--line:#23233A;--line2:#2E2E4A;--txt:#F2F2F7;--muted:#9A9AB0;--muted2:#6B6B85;--purple:#A855F7;--cyan:#22D3EE;--green:#22C55E;--red:#F43F5E;--amber:#F59E0B;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;min-height:100vh;}
+.topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(180deg,#12121F,#0F0F1A);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.topbar b{font-size:15px;letter-spacing:.08em}
+.topbar span{display:block;font-size:11px;color:var(--muted);letter-spacing:.14em;font-weight:600;margin-top:2px}
+.topbar a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:700;border:1px solid var(--line);padding:8px 14px;border-radius:999px}
+.topbar a:hover{color:var(--txt);border-color:var(--txt)}
+.container{max-width:900px;width:100%;padding:22px;margin:0 auto}
+.hero{margin:6px 0 18px}
+.hero h1{font-size:24px;color:var(--cyan);letter-spacing:.02em}
+.hero p{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.panel h2{font-size:11px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.14em;font-weight:800}
+textarea{width:100%;height:140px;background:var(--bg2);border:1px solid var(--line);color:var(--txt);padding:14px;border-radius:10px;font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.6;resize:vertical;outline:none}
+textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(168,85,247,.18)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{font-size:11px;font-weight:700;background:#171728;border:1px solid var(--line2);color:var(--muted);padding:6px 10px;border-radius:999px;cursor:pointer}
+.chip:hover{color:var(--txt);border-color:var(--purple)}
+.btn-primary{background:linear-gradient(180deg,#22D3EE,#0EA5C9);color:#04120A;border:none;padding:13px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;width:100%;margin-top:12px}
+.btn-primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.55;cursor:wait;transform:none}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-row button{flex:1;background:var(--bg2);color:var(--txt);border:1px solid var(--line);padding:10px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer}
+.btn-row button:hover{border-color:var(--txt)}
+pre{background:#08030F;border:1px solid var(--line);padding:16px;border-radius:10px;font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.6;color:var(--green);overflow-x:auto;white-space:pre-wrap;word-wrap:break-word;min-height:120px}
+pre.error{color:var(--red);border-color:#3A1A22}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--muted)}
+#diag-status{font-size:12px;font-weight:700;color:var(--muted)}
+#diag-status.ok{color:var(--green)} #diag-status.err{color:var(--red)} #diag-status.busy{color:var(--amber)}
+.footer{font-size:11px;color:var(--muted2);text-align:center;padding:10px 0 20px}
+.kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi label{font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:800}
+.kpi b{display:block;font-size:18px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><b>CT NEXUS // THERMO LAB</b><span>DIAGNÓSTICO • PARSER REAL</span></div>
+  <a href="/fleet.html">🗺️ VOLVER AL RADAR</a>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>Decodificar SMS / HEX</h1>
+    <p>Pega el payload HEX o el SMS crudo. El backend lo decodifica con el parser real. Flujo corregido: same-origin sin API key en frontend, mismo endpoint <b>/api/diagnostico/parse</b>.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><label>FAMILIA</label><b id="kpi-family">—</b></div>
+    <div class="kpi"><label>DISPOSITIVO</label><b id="kpi-device">—</b></div>
+    <div class="kpi"><label>ESTADO</label><b id="kpi-status">Esperando</b></div>
+  </div>
+
+  <div class="panel">
+    <h2>Entrada</h2>
+    <textarea id="input-text" placeholder="Pega el payload Hexadecimal o el SMS crudo aquí...&#10;Ejemplo: ! E4764312747FFFF...&#10;Ejemplo: GPS:3D-DIFF 11 LAT:19.4003153 LON:-97.6227735 HDG:235"></textarea>
+    <div class="chips">
+      <button class="chip" type="button" onclick="cargarEjemplo('hex')">Ejemplo HEX !r4</button>
+      <button class="chip" type="button" onclick="cargarEjemplo('gps')">Ejemplo GPS</button>
+      <button class="chip" type="button" onclick="cargarEjemplo('app')">Ejemplo APP / !r0</button>
+      <span id="char-count" style="margin-left:auto;font-size:11px;color:var(--muted)">0 caracteres</span>
+    </div>
+    <button class="btn-primary" id="btn-decode" onclick="decodeInput()">🔬 DECODIFICAR CON EL BACKEND REAL</button>
+    <div class="btn-row">
+      <button type="button" onclick="limpiarDiagnostico()">🧹 LIMPIAR</button>
+      <button type="button" onclick="copiarResultado()">📋 COPIAR RESULTADO</button>
+    </div>
+    <div class="meta"><span id="diag-status">Listo para decodificar</span><span>Endpoint: POST /api/diagnostico/parse</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Resultado</h2>
+    <pre id="output">Esperando datos...</pre>
+  </div>
+  <div class="footer">NEXUS-MITHRIL • TGL Telemetría • Flujo corregido: frontend → same-origin → backend → parser</div>
+</div>
+
+<script>
+const EJEMPLOS = {
+  hex: "! E4764312747FFFF-\nF0100006AE050776AE05077\n0B904061C5CF-\nF2960000000200EB0-\nB020014FFA34F0D1E00FFF-\nF040000321C00000-\nF580020001E00000400",
+  gps: "GPS:3D-DIFF 11\nLAT:19.4003153\nLON:-97.6227735\nHDG:235\nSPD:0 kph, 0 mph\nMID:4764312747 ESN\nAGC:54%",
+  app: "APP:445 8.7b\nCOM:-71 DaL\ninternet.itelcel.com\nGPS:3D-DIFF 19\nINP:0000000000000111\n12.6V\nMID:7000276167 ESN"
+};
+function cargarEjemplo(tipo){ const ta=document.getElementById('input-text'); ta.value=EJEMPLOS[tipo]||''; actualizarContador(); ta.focus(); }
+function actualizarContador(){ const ta=document.getElementById('input-text'); document.getElementById('char-count').textContent = ta.value.length + ' caracteres'; }
+document.getElementById('input-text').addEventListener('input', actualizarContador);
+
+async function decodeInput() {
+    const texto = document.getElementById('input-text').value.trim();
+    const output = document.getElementById('output');
+    const statusEl = document.getElementById('diag-status');
+    const btn = document.getElementById('btn-decode');
+    if (!texto) {
+        output.textContent = 'Por favor, pega un texto o payload primero.';
+        output.classList.add('error');
+        statusEl.textContent = 'Falta texto'; statusEl.className='err';
+        return;
+    }
+    output.textContent = 'Consultando al backend...';
+    output.classList.remove('error');
+    statusEl.textContent = 'Consultando al backend...'; statusEl.className='busy';
+    document.getElementById('kpi-status').textContent = 'Decodificando';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ DECODIFICANDO...'; }
+    try {
+        // CORREGIDO v3: same-origin sin x-api-key en frontend (server.js lo permite)
+        const res = await fetch('/api/diagnostico/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texto: texto })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            const parsed = data.parsed || data;
+            output.textContent = JSON.stringify(parsed, null, 2);
+            output.style.color = 'var(--green)';
+            statusEl.textContent = 'Listo'; statusEl.className='ok';
+            document.getElementById('kpi-family').textContent = parsed.family || parsed.familia || '—';
+            document.getElementById('kpi-device').textContent = parsed.device || parsed.esn || parsed.mid || parsed.MID || '—';
+            document.getElementById('kpi-status').textContent = 'OK';
+        } else {
+            output.textContent = 'Error del Backend: ' + (data.error || res.status);
+            output.classList.add('error');
+            statusEl.textContent = 'Error del backend'; statusEl.className='err';
+            document.getElementById('kpi-status').textContent = 'Error';
+        }
+    } catch (e) {
+        output.textContent = 'Error de red: ' + e.message;
+        output.classList.add('error');
+        statusEl.textContent = 'Error de red'; statusEl.className='err';
+        document.getElementById('kpi-status').textContent = 'Error';
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔬 DECODIFICAR CON EL BACKEND REAL'; }
+    }
+}
+function limpiarDiagnostico(){ document.getElementById('input-text').value=''; document.getElementById('output').textContent='Esperando datos...'; document.getElementById('output').classList.remove('error'); document.getElementById('diag-status').textContent='Listo para decodificar'; document.getElementById('diag-status').className=''; document.getElementById('kpi-family').textContent='—'; document.getElementById('kpi-device').textContent='—'; document.getElementById('kpi-status').textContent='Esperando'; actualizarContador(); }
+async function copiarResultado(){ try{ await navigator.clipboard.writeText(document.getElementById('output').textContent); document.getElementById('diag-status').textContent='Copiado'; document.getElementById('diag-status').className='ok'; }catch(e){ document.getElementById('diag-status').textContent='No se pudo copiar: '+e.message; document.getElementById('diag-status').className='err'; } }
+</script>
+</body>
+</html>

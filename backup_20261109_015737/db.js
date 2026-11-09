@@ -1,10 +1,11 @@
-const Database = require('better-sqlite3');
+﻿const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, 'nexus.db'));
+db.pragma('journal_mode = WAL');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS posiciones (
@@ -21,14 +22,11 @@ CREATE TABLE IF NOT EXISTS posiciones (
   rssi INTEGER,
   voltaje REAL,
   estado_sensores TEXT,
-  fuente TEXT DEFAULT 'hubble',
+  fuente TEXT DEFAULT 'personal',
   timestamp TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pos_device ON posiciones(device);
-CREATE INDEX IF NOT EXISTS idx_pos_ts ON posiciones(timestamp);
-`);
 
-db.exec(`
 CREATE TABLE IF NOT EXISTS geofence_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   device_id TEXT NOT NULL,
@@ -39,18 +37,14 @@ CREATE TABLE IF NOT EXISTS geofence_events (
   lon REAL,
   timestamp TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_geo_device ON geofence_events(device_id);
-`);
 
-function ensureColumn(table, column, type) {
-  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
-  if (!cols.some(c => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
-}
-ensureColumn('posiciones', 'vibracion', 'REAL');
-ensureColumn('posiciones', 'bateria_v', 'REAL');
-ensureColumn('posiciones', 'rpm', 'INTEGER');
-ensureColumn('posiciones', 'temperatura', 'REAL');
-ensureColumn('posiciones', 'estado_sensores', 'TEXT');
+CREATE TABLE IF NOT EXISTS raw_sms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  device TEXT NOT NULL,
+  texto TEXT NOT NULL,
+  timestamp TEXT NOT NULL
+);
+`);
 
 function saveTelemetry(d) {
   const stmt = db.prepare(`
@@ -58,8 +52,7 @@ function saveTelemetry(d) {
     VALUES (@device, @nombre, @lat, @lon, @velocidad, @temperatura, @vibracion, @bateria_v, @rpm, @rssi, @voltaje, @estado_sensores, @fuente, @timestamp)
   `);
   return stmt.run({
-    device: d.device,
-    nombre: d.nombre || d.device,
+    device: d.device, nombre: d.nombre || d.device,
     lat: d.lat, lon: d.lon,
     velocidad: d.velocidad || 0,
     temperatura: d.temperatura ?? null,
@@ -69,16 +62,14 @@ function saveTelemetry(d) {
     rssi: d.rssi ?? null,
     voltaje: d.voltaje ?? d.bateria_v ?? null,
     estado_sensores: d.estado_sensores ?? null,
-    fuente: d.fuente || 'hubble',
+    fuente: d.fuente || 'personal',
     timestamp: d.timestamp || new Date().toISOString()
   });
 }
 
-// Puente de compatibilidad para gps_router.js (SMS)
 function insertGpsPosition(data) {
     return saveTelemetry({
-        device: data.device,
-        nombre: data.device,
+        device: data.device, nombre: data.nombre || data.device,
         lat: data.lat, lon: data.lon,
         velocidad: data.velocidad || 0,
         temperatura: data.temperatura ?? null,
@@ -100,12 +91,26 @@ function getHistory(device, limit = 100) {
 }
 
 function saveGeofenceEvent(e) {
-  return db.prepare(`INSERT INTO geofence_events (device_id, geofence_id, geofence_nombre, tipo, lat, lon, timestamp) VALUES (@device_id, @geofence_id, @geofence_nombre, @tipo, @lat, @lon, @timestamp)`).run(e);
+  return db.prepare(`INSERT INTO geofence_events (device_id, geofence_id, geofence_nombre, tipo, lat, lon, timestamp) VALUES (@device_id, @geofence_id, @geofence_nombre, @tipo, @lat, @lon, @timestamp)`).run({
+    device_id: e.device_id || e.deviceId,
+    geofence_id: e.geofence_id || e.geofence,
+    geofence_nombre: e.geofence_nombre || e.nombre,
+    tipo: e.tipo,
+    lat: e.lat || 0,
+    lon: e.lon || 0,
+    timestamp: e.timestamp || new Date().toISOString()
+  });
 }
 
-function getGeofenceEvents(device, limit = 50) {
-  if (device) return db.prepare(`SELECT * FROM geofence_events WHERE device_id = ? ORDER BY id DESC LIMIT ?`).all(device, limit);
-  return db.prepare(`SELECT * FROM geofence_events ORDER BY id DESC LIMIT ?`).all(limit);
+function saveRawSMS(device, texto) {
+  const stmt = db.prepare('INSERT INTO raw_sms (device, texto, timestamp) VALUES (?, ?, ?)');
+  return stmt.run(device, texto, new Date().toISOString());
 }
 
-module.exports = { db, saveTelemetry, insertGpsPosition, getLatestPositions, getHistory, saveGeofenceEvent, getGeofenceEvents };
+function getRawSMS(device, limit = 100) {
+  return db.prepare('SELECT * FROM raw_sms WHERE device = ? ORDER BY id DESC LIMIT ?').all(device, limit);
+}
+
+module.exports = { 
+  db, saveTelemetry, insertGpsPosition, getLatestPositions, getHistory, saveGeofenceEvent, saveRawSMS, getRawSMS 
+};
