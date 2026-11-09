@@ -11,6 +11,7 @@ const configRoutes = require('./routes/config-routes');
 const diagnosticoRoutes = require('./routes/diagnostico-routes');
 
 
+global.isSystemPaused = false;
 const API_KEY = process.env.API_KEY || 'RF-NEXUS-SECURE-2026';
 const PORT = Number(process.env.PORT || 3100);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -90,6 +91,7 @@ async function build() {
   });
 
   fastify.get('/api/posiciones/latest', async () => {
+    if (global.isSystemPaused) return [];
     const rows = db.getLatestPositions();
     return rows.map(r => ({
       ...r, dispositivo_id: r.device, mid: r.device, fuente: r.fuente || 'sms'
@@ -235,6 +237,18 @@ async function build() {
       req.log.error('RAW SMS ERROR:', e.message);
       return reply.status(500).send({ error: e.message });
     }
+  });
+
+  
+  fastify.get('/api/system/status', async () => {
+    return { paused: global.isSystemPaused };
+  });
+
+  fastify.post('/api/system/toggle', async (req, reply) => {
+    const { action } = req.body || {};
+    if (action === 'pause') global.isSystemPaused = true;
+    else if (action === 'resume') global.isSystemPaused = false;
+    return { status: 'OK', paused: global.isSystemPaused };
   });
 
   await fastify.register(configRoutes);

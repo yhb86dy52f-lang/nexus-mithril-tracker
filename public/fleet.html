@@ -1107,7 +1107,7 @@
         <button class="nav-btn" id="btn-config" onclick="showConfigView()">⚙️ CONFIG</button>
         <button class="nav-btn" style="color:#FF2EA6; border-color:#FF2EA6;"
           onclick="window.location.href='/diagnostico.html'">🔬 LABORATORIO</button>
-        <button class="btn-danger" onclick="apagarSistema()">APAGAR</button>
+        <button class="btn-danger" id="btn-power" onclick="toggleSystemPower()">APAGAR</button>
       </nav>
       <div class="head-right">
         <div class="status-pill"><span class="dot"></span> <span id="api-status">EN LINEA</span></div>
@@ -1819,6 +1819,51 @@
             const a = document.createElement('a'); a.href = url; a.download = `raw_sms_${deviceId}.txt`; a.click(); URL.revokeObjectURL(url);
         } catch (err) { console.error(err); alert('Error de red descargando los datos.'); }
     };
+
+    
+    window.toggleSystemPower = async function() {
+        const btn = document.getElementById('btn-power');
+        if (!btn) return;
+        
+        // Determinamos si estamos apagando o encendiendo basándonos en el texto
+        const isCurrentlyPaused = btn.innerText.trim() === 'ENCENDER';
+        const action = isCurrentlyPaused ? 'resume' : 'pause';
+        
+        try {
+            const res = await api('/api/system/toggle', { method: 'POST', body: { action } });
+            updatePowerButton(res.paused);
+            
+            // Forzar la recarga del mapa para que se limpien o aparezcan las unidades
+            if (typeof loadPositions === 'function') loadPositions();
+            
+        } catch(e) {
+            alert('Error cambiando estado: ' + e.message);
+        }
+    };
+
+    function updatePowerButton(isPaused) {
+        const btn = document.getElementById('btn-power');
+        if (!btn) return;
+        if (isPaused) {
+            btn.innerText = 'ENCENDER';
+            btn.style.backgroundColor = '#22C55E';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#22C55E';
+        } else {
+            btn.innerText = 'APAGAR';
+            btn.style.backgroundColor = 'transparent';
+            btn.style.color = '#F43F5E';
+            btn.style.borderColor = '#3A1A22';
+        }
+    }
+    
+    // Verificar estado inicial al cargar la página
+    setTimeout(() => {
+        if (typeof api === 'function') {
+            api('/api/system/status').then(res => updatePowerButton(res.paused)).catch(()=>{});
+        }
+    }, 1000);
+
 
     loadPositions();
     setInterval(loadPositions, 2000);
