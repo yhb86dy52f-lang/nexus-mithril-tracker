@@ -16,6 +16,7 @@ const wsBroadcast = safeRequire('./ws-broadcast');
 const dbMod = safeRequire('./db');
 const geofenceMod = safeRequire('./geofence');
 
+global.isSystemPaused = false;
 const API_KEY = process.env.API_KEY || '';
 const PORT = Number(process.env.PORT || 3100);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -93,6 +94,7 @@ async function build() {
   });
 
   fastify.get('/api/posiciones/latest', async () => {
+    if (global.isSystemPaused) return [];
     try {
       if (typeof dbMod.getLatestPositions === 'function') {
         const rows = dbMod.getLatestPositions();
@@ -165,6 +167,17 @@ async function build() {
   await fastify.register(hubbleRoutes);
   await fastify.register(configRoutes);
   await fastify.register(pockethookRoutes);
+  fastify.get('/api/system/status', async () => {
+    return { paused: global.isSystemPaused };
+  });
+
+  fastify.post('/api/system/toggle', async (req, reply) => {
+    const { action } = req.body || {};
+    if (action === 'pause') global.isSystemPaused = true;
+    else if (action === 'resume') global.isSystemPaused = false;
+    return { status: 'OK', paused: global.isSystemPaused };
+  });
+
   return fastify;
 }
 

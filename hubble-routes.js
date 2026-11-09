@@ -36,6 +36,7 @@ module.exports = async function hubbleRoutes(fastify, opts) {
   
   // Ruta de respaldo
   fastify.get('/api/hubble/devices', async (req, reply) => {
+    if (global.isSystemPaused) return reply.send([]);
     try {
       const rows = db.getLatestPositions().filter(r => r.fuente === 'hubble');
       return reply.send(rows.map(r => ({
