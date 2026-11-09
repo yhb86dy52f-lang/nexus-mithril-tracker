@@ -10,3 +10,7 @@ data/
 Thumbs.db
 public/sw.js
 *.bak-*
+
+temp_*
+
+server.js.bak*
