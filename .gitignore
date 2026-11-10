@@ -1,16 +1,32 @@
+# Dependencias
 node_modules/
-.env
+package-lock.json
+
+# Base de datos y datos locales
 data/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
-*.bak
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Logs y temporales
 *.log
+logs/
+*.tmp
+
+# Backups y archivos de laboratorio
+*.bak
+*.zip
+_upgrade_v3/
+backup_*/
+Modulo_Ingesta_*/
+
+# Sistema
 .DS_Store
 Thumbs.db
-public/sw.js
-*.bak-*
-
-temp_*
-
-server.js.bak*
