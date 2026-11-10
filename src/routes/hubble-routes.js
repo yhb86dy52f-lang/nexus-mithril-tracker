@@ -64,58 +64,89 @@ module.exports = async function hubbleRoutes(fastify, opts) {
 
   fastify.post('/api/hubble/webhook', async (req, reply) => {
     try {
-      // Validar seguridad - secret desde env o config.json, sin cambiar API
-      const secret = getWebhookSecret();
+      // 1. Validar token
+      const secret = process.env.HUBBLE_WEBHOOK_SECRET;
       const token = req.headers['x-hubble-token'];
-      
       if (secret && token !== secret) {
-        req.log.warn('⚠️ Intento de webhook no autorizado bloqueado.');
-        return reply.status(401).send({ error: 'Unauthorized: Token inválido' });
+        req.log.warn('Intento de webhook no autorizado bloqueado.');
+        return reply.status(401).send({ error: 'Unauthorized: Token invalido' });
       }
 
-      const packets = Array.isArray(req.body) ? req.body : (req.body.packets || req.body.data || []);
+      // 2. Normalizar a array de paquetes
+      let packets = [];
+      const body = req.body;
+      if (Array.isArray(body)) {
+        packets = body;
+      } else if (body && Array.isArray(body.packets)) {
+        packets = body.packets;
+      } else if (body && Array.isArray(body.data)) {
+        packets = body.data;
+      } else if (body && typeof body === 'object') {
+        // Un solo paquete (acepta cualquier estructura)
+        packets = [body];
+      }
+
+      if (packets.length === 0) {
+        req.log.warn(`[WEBHOOK] Payload vacio. Body: ${JSON.stringify(body).substring(0, 200)}`);
+        return reply.send({ status: 'OK', message: 'Payload vacio' });
+      }
+
+      // 3. Procesar cada paquete (acepta formato Hubble Y formato simple)
       let savedCount = 0;
-
       for (const p of packets) {
-        // CORREGIDO v2: guards contra p.device undefined (antes crasheaba si venia paquete sin device)
-        const dev = p.device || {};
-        const loc = p.location || p.terrestrial?.location || null;
-        if (loc && loc.latitude && loc.longitude) {
-          const deviceId = dev.id || p.deviceId || p.id || 'hubble-unknown';
-          const lat = loc.latitude;
-          const lon = loc.longitude;
-          const rssi = dev.rssi ?? null;
-          const ts = dev.timestamp ? dev.timestamp * 1000 : Date.now();
+        let lat = null, lon = null, deviceId = null, name = null, rssi = null, ts = null;
 
-          db.saveTelemetry({
-            device: deviceId,
-            nombre: dev.name || deviceId,
-            lat, lon, rssi,
-            fuente: 'hubble',
-            timestamp: new Date(ts).toISOString()
-          });
-
-          // CORREGIDO v2: geofence + SSE igual que en /api/telemetria y /api/sms-gps, para cohesión
-          try {
-            const eventos = checkDevice(deviceId, lat, lon);
-            for (const e of eventos) {
-              try { db.saveGeofenceEvent(e); } catch (err) {}
-              broadcast({ type: 'geofence', ...e });
-            }
-          } catch (err) {}
-          
-          try { broadcast({ type: 'telemetria', device: deviceId, lat, lon, fuente: 'hubble' }); } catch(e) {}
-          if (typeof global.emitSSE === 'function') { try { global.emitSSE({ type: 'telemetria', device: deviceId, lat, lon, fuente: 'hubble' }); } catch (e) {} }
-          
-          savedCount++;
+        // Formato A: Hubble real { location: {latitude, longitude}, device: {id, name} }
+        if (p.location && p.location.latitude && p.location.longitude) {
+          lat = p.location.latitude;
+          lon = p.location.longitude;
+          deviceId = (p.device && p.device.id) || 'hubble-unknown';
+          name = (p.device && p.device.name) || deviceId;
+          rssi = (p.device && p.device.rssi) || null;
+          ts = (p.device && p.device.timestamp) ? p.device.timestamp * 1000
+             : (p.location.timestamp ? p.location.timestamp * 1000 : Date.now());
         }
+        // Formato B: simple { device: "ID", lat, lon } o { device_id, latitude, longitude }
+        else if (
+          (typeof p.lat === 'number' || typeof p.latitude === 'number') &&
+          (typeof p.lon === 'number' || typeof p.longitude === 'number')
+        ) {
+          lat = p.lat ?? p.latitude;
+          lon = p.lon ?? p.longitude;
+          deviceId = p.device || p.device_id || p.deviceId || 'test-device';
+          name = p.name || deviceId;
+          rssi = p.rssi || null;
+          ts = p.timestamp ? (p.timestamp * 1000) : Date.now();
+        }
+
+        if (lat === null || lon === null) {
+          req.log.warn(`[WEBHOOK] Paquete sin coordenadas. Keys: ${Object.keys(p).join(', ')}`);
+          continue;
+        }
+
+        // 4. Guardar en DB
+        db.saveTelemetry({
+          device: deviceId,
+          nombre: name,
+          lat: lat,
+          lon: lon,
+          rssi: rssi,
+          fuente: 'hubble',
+          timestamp: new Date(ts).toISOString()
+        });
+
+        // 5. Emitir por WebSocket
+        try { broadcast({ type: 'telemetria', device: deviceId, lat, lon, fuente: 'hubble' }); } catch(e) {}
+
+        savedCount++;
       }
-      
-      req.log.info(`[HUBBLE WEBHOOK] Recibidos ${savedCount} paquetes en tiempo real.`);
-      return reply.code(200).send({ status: 'OK', message: `Recibidos ${savedCount} paquetes` });
+
+      req.log.info(`[HUBBLE WEBHOOK] Recibidos ${savedCount}/${packets.length} paquetes en tiempo real.`);
+      return reply.code(200).send({ status: 'OK', message: `Recibidos ${savedCount} paquetes`, total: packets.length });
     } catch (err) {
       req.log.error(err);
-      return reply.status(500).send({ error: 'Error interno procesando webhook' });
+      return reply.status(500).send({ error: 'Error interno procesando webhook', details: err.message });
     }
   });
 };
+

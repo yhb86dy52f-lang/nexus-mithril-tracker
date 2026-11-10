@@ -1,9 +1,26 @@
-const { fetchHubbleDevices } = require('./hubble-client');
-const db = require('./db');
-const { broadcast } = require('./ws-broadcast');
+const { fetchHubbleDevices } = require('../services/hubble-client');
+const db = require('../services/db');
+const { broadcast } = require('../services/ws-broadcast');
+const { checkDevice } = require('../services/geofence');
+const fs = require('fs');
+const path = require('path');
+
+function getWebhookSecret() {
+  // CORREGIDO v2: antes solo leia process.env, pero config-routes guarda el secret en data/config.json.
+  // Ahora lee env primero, luego config.json, sin cambiar valores ni APIs.
+  if (process.env.HUBBLE_WEBHOOK_SECRET) return process.env.HUBBLE_WEBHOOK_SECRET;
+  try {
+    const p = path.join(__dirname, 'data', 'config.json');
+    if (fs.existsSync(p)) {
+      const cfg = JSON.parse(fs.readFileSync(p, 'utf8'));
+      if (cfg.hubbleWebhookSecret) return cfg.hubbleWebhookSecret;
+    }
+  } catch (e) {}
+  return '';
+}
 
 module.exports = async function hubbleRoutes(fastify, opts) {
-  // 1. Ruta manual de sincronización (Pull)
+  // 1. Ruta manual de sincronización (Pull) - API y URLs intactas
   fastify.post('/api/hubble/sync', async (req, reply) => {
     try {
       const devices = await fetchHubbleDevices();
@@ -32,8 +49,7 @@ module.exports = async function hubbleRoutes(fastify, opts) {
     }
   });
 
-  // 2. Ruta de Webhook para tiempo real (Push)
-  
+  // 2. Ruta de Webhook para tiempo real (Push) - API y URLs intactas
   // Ruta de respaldo
   fastify.get('/api/hubble/devices', async (req, reply) => {
     if (global.isSystemPaused) return reply.send([]);
@@ -48,39 +64,48 @@ module.exports = async function hubbleRoutes(fastify, opts) {
 
   fastify.post('/api/hubble/webhook', async (req, reply) => {
     try {
-      // Validar seguridad
-      const secret = process.env.HUBBLE_WEBHOOK_SECRET;
+      // Validar seguridad - secret desde env o config.json, sin cambiar API
+      const secret = getWebhookSecret();
       const token = req.headers['x-hubble-token'];
       
-      // Si hay un secreto configurado y el token no coincide, se rechaza
       if (secret && token !== secret) {
         req.log.warn('⚠️ Intento de webhook no autorizado bloqueado.');
         return reply.status(401).send({ error: 'Unauthorized: Token inválido' });
       }
 
-      // Parsear payload (Array directo o dentro de un objeto)
       const packets = Array.isArray(req.body) ? req.body : (req.body.packets || req.body.data || []);
       let savedCount = 0;
 
       for (const p of packets) {
-        // Adaptado a la estructura del webhook de Hubble
-        if (p.location && p.location.latitude && p.location.longitude) {
-          const deviceId = p.device.id;
-          const lat = p.location.latitude;
-          const lon = p.location.longitude;
-          const rssi = p.device.rssi || null;
-          const ts = p.device.timestamp ? p.device.timestamp * 1000 : Date.now();
+        // CORREGIDO v2: guards contra p.device undefined (antes crasheaba si venia paquete sin device)
+        const dev = p.device || {};
+        const loc = p.location || p.terrestrial?.location || null;
+        if (loc && loc.latitude && loc.longitude) {
+          const deviceId = dev.id || p.deviceId || p.id || 'hubble-unknown';
+          const lat = loc.latitude;
+          const lon = loc.longitude;
+          const rssi = dev.rssi ?? null;
+          const ts = dev.timestamp ? dev.timestamp * 1000 : Date.now();
 
           db.saveTelemetry({
             device: deviceId,
-            nombre: p.device.name || deviceId,
+            nombre: dev.name || deviceId,
             lat, lon, rssi,
             fuente: 'hubble',
             timestamp: new Date(ts).toISOString()
           });
+
+          // CORREGIDO v2: geofence + SSE igual que en /api/telemetria y /api/sms-gps, para cohesión
+          try {
+            const eventos = checkDevice(deviceId, lat, lon);
+            for (const e of eventos) {
+              try { db.saveGeofenceEvent(e); } catch (err) {}
+              broadcast({ type: 'geofence', ...e });
+            }
+          } catch (err) {}
           
-          // Emitir por WebSocket para que el mapa se actualice al instante
           try { broadcast({ type: 'telemetria', device: deviceId, lat, lon, fuente: 'hubble' }); } catch(e) {}
+          if (typeof global.emitSSE === 'function') { try { global.emitSSE({ type: 'telemetria', device: deviceId, lat, lon, fuente: 'hubble' }); } catch (e) {} }
           
           savedCount++;
         }
