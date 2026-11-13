@@ -1,5 +1,5 @@
-const CACHE = 'nexus-mithril-v20261109023013';
-const ASSETS = ['/fleet.html', '/diagnostico.html', '/manifest.json'];
+const CACHE = 'nexus-mithril-satellite-201323';
+const ASSETS = ['/fleet.html', '/diagnostico.html', '/manifest.json', '/osiris-layers.js'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -27,4 +27,20 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(caches.match(e.request).then((h) => h || fetch(e.request)));
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -22,7 +22,7 @@ async function build() {
 
   // 1. Permisos de Seguridad (CSP)
   fastify.addHook('onSend', async (request, reply, payload) => {
-    reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://ntfy.sh;");
+    reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.cartocdn.com https://server.arcgisonline.com https://*.basemaps.cartocdn.com https://*.cartocdn.com https://server.arcgisonline.com https://*.basemaps.cartocdn.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://ntfy.sh https://unpkg.com https://*.tile.openstreetmap.org;");
     return payload;
   });
 
@@ -31,21 +31,34 @@ async function build() {
   await fastify.register(require('@fastify/static'), { root: path.join(__dirname, '..', 'public'), prefix: '/' });
 
   // 2. ÚNICO Guardia de Seguridad (Evita duplicados)
-  fastify.addHook('onRequest', async (req, reply) => {
+    fastify.addHook('onRequest', async (req, reply) => {
     if ((req.url || '').startsWith('/api/')) {
-      // Permitir same-origin (panel web)
-      if (req.headers['sec-fetch-site'] === 'same-origin') return;
-      // Permitir Webhook de Hubble (tiene su propio token)
+      // 1. Permitir Webhook de Hubble (tiene su propio token)
       if (req.url === '/api/hubble/webhook') return; 
-      // Permitir lecturas GET
+      
+      // 2. Permitir lecturas GET (necesario para el Viewer público)
       const isReadOnly = req.method === 'GET' && (
         req.url.startsWith('/api/posiciones/') || 
-        req.url.startsWith('/api/hubble/devices') || req.url.startsWith('/api/device/') ||
-        req.url.startsWith('/api/export/')
+        req.url.startsWith('/api/hubble/devices') || 
+        req.url.startsWith('/api/device/') ||
+        req.url.startsWith('/api/export/') ||
+        req.url.startsWith('/api/system/status') || req.url.startsWith('/api/osiris/')
       );
       if (isReadOnly) return;
       
-      // Exigir API Key para el resto (ej. llamadas externas)
+      // 3. DETECCIÓN DE ENTORNO PÚBLICO (Tailscale Funnel)
+      const host = req.headers.host || '';
+      const isPublic = host.includes('.ts.net') || req.headers['tailscale-funnel-request'] !== undefined;
+      
+      if (isPublic) {
+        // Si es público, RECHAZAR cualquier escritura
+        reply.code(403).send({ ok: false, error: 'Acceso denegado: El modo Visor es de solo lectura.' });
+        return;
+      }
+
+      // 4. Panel Master local (localhost o red local)
+      if (req.headers['sec-fetch-site'] === 'same-origin') return;
+      
       const key = req.headers['x-api-key'];
       if (API_KEY && key !== API_KEY) {
         reply.code(401).send({ ok: false, error: 'unauthorized' });
@@ -258,9 +271,17 @@ async function build() {
 
 async function main() {
   const app = await build();
+  await app.register(require('./routes/osiris'));
   await app.listen({ port: PORT, host: HOST });
 }
 if (require.main === module) main();
 module.exports = { build };
+
+
+
+
+
+
+
 
 

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUNEFORGE // EMERGENCY GPS</title>
+    <style>
+        :root {
+            --bg-core: #0D0211;
+            --neon-green: #39FF14;
+            --neon-cyan: #00F0FF;
+            --glass-bg: rgba(13, 2, 17, 0.85);
+            --border-neon: rgba(57, 255, 20, 0.4);
+            --text-main: #E0E0E0;
+            --danger: #FF003C;
+        }
+        body {
+            background-color: var(--bg-core);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            color: var(--neon-green);
+            text-shadow: 0 0 10px rgba(57,255,20,0.5);
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        .container {
+            width: 100%; max-width: 800px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-neon);
+            border-radius: 8px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(57,255,20,0.1);
+        }
+        .panel h2 {
+            color: var(--neon-cyan);
+            font-size: 16px;
+            margin-top: 0;
+            border-bottom: 1px solid var(--neon-cyan);
+            padding-bottom: 10px;
+        }
+        textarea {
+            width: 100%; height: 120px;
+            background: #000; color: var(--neon-green);
+            border: 1px solid var(--border-neon);
+            padding: 10px; font-family: inherit; font-size: 14px;
+            resize: vertical; outline: none;
+            box-sizing: border-box;
+        }
+        textarea:focus { border-color: var(--neon-green); box-shadow: 0 0 10px rgba(57,255,20,0.3); }
+        
+        button {
+            width: 100%; padding: 12px; margin-top: 15px;
+            background: var(--neon-green); color: var(--bg-core);
+            border: none; font-weight: bold; font-family: inherit;
+            cursor: pointer; border-radius: 4px;
+            transition: all 0.2s;
+        }
+        button:hover { background: #2bd10f; box-shadow: 0 0 15px var(--neon-green); }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        .status-msg {
+            margin-top: 15px; font-size: 12px; text-align: center;
+            min-height: 20px;
+        }
+        .status-ok { color: var(--neon-green); }
+        .status-err { color: var(--danger); }
+
+        .data-row {
+            display: flex; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px dashed #333;
+        }
+        .data-label { color: #888; }
+        .data-value { color: var(--neon-green); font-weight: bold; }
+        
+        .map-link {
+            display: block; text-align: center;
+            background: var(--neon-cyan); color: var(--bg-core);
+            padding: 10px; margin-top: 20px; text-decoration: none;
+            font-weight: bold; border-radius: 4px;
+        }
+        .map-link:hover { background: #00c0cc; }
+    </style>
+</head>
+<body>
+
+    <h1>⚡ RUNEFORGE EMERGENCY GPS</h1>
+
+    <div class="container">
+        <!-- PANEL IZQUIERDO: ENTRADA -->
+        <div class="panel">
+            <h2>📥 INGRESO DE SMS</h2>
+            <p style="font-size: 12px; color: #888;">Pega el SMS crudo del rastreador (ej. <code>!R4,lat,lon</code>).</p>
+            <textarea id="smsInput" placeholder="!R4,19.4326,-99.1332..."></textarea>
+            <button id="btnProcess" onclick="processSMS()">PROCESAR TELEMETRÍA</button>
+            <div id="status" class="status-msg"></div>
+        </div>
+
+        <!-- PANEL DERECHO: SALIDA -->
+        <div class="panel">
+            <h2>🎯 ÚLTIMA POSICIÓN VÁLIDA</h2>
+            <div class="data-row">
+                <span class="data-label">Dispositivo (IMEI):</span>
+                <span class="data-value" id="outImei">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Latitud:</span>
+                <span class="data-value" id="outLat">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Longitud:</span>
+                <span class="data-value" id="outLon">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Timestamp:</span>
+                <span class="data-value" id="outTime">--</span>
+            </div>
+            <a href="#" id="btnMap" target="_blank" class="map-link" style="display:none;">🗺️ ABRIR EN GOOGLE MAPS</a>
+        </div>
+    </div>
+
+    <script>
+        // Función para procesar el SMS (POST al backend)
+        async function processSMS() {
+            const smsText = document.getElementById('smsInput').value.trim();
+            const btn = document.getElementById('btnProcess');
+            const statusDiv = document.getElementById('status');
+
+            if (!smsText) {
+                showStatus("El campo de SMS está vacío.", true);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "PROCESANDO...";
+            statusDiv.innerText = "";
+
+            try {
+                // Asumimos que el backend Fastify está corriendo en el mismo host/puerto
+                const response = await fetch('http://127.0.0.1:3100/api/sms-gps', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sms_text: smsText })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'ok') {
+                    showStatus("Telemetría procesada y guardada localmente.", false);
+                    updateUI(data);
+                    document.getElementById('smsInput').value = ''; // Limpiar
+                } else {
+                    showStatus(`Error: ${data.error || 'Desconocido'}`, true);
+                }
+            } catch (err) {
+                showStatus("Error de conexión con el núcleo local (Fastify).", true);
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "PROCESAR TELEMETRÍA";
+            }
+        }
+
+        // Actualizar la interfaz con los datos recibidos
+        function updateUI(data) {
+            document.getElementById('outImei').innerText = data.device_id || "DESCONOCIDO";
+            document.getElementById('outLat').innerText = data.lat;
+            document.getElementById('outLon').innerText = data.lon;
+            document.getElementById('outTime').innerText = new Date().toLocaleTimeString();
+
+            const mapBtn = document.getElementById('btnMap');
+            mapBtn.href = `https://www.google.com/maps?q=${data.lat},${data.lon}`;
+            mapBtn.style.display = 'block';
+        }
+
+        // Mostrar mensajes de estado
+        function showStatus(msg, isError) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = msg;
+            statusDiv.className = `status-msg ${isError ? 'status-err' : 'status-ok'}`;
+        }
+
+        // Al cargar, consultar si ya hay un último reporte guardado
+        window.onload = async () => {
+            try {
+                const res = await fetch('http://127.0.0.1:3100/api/sms-gps/latest');
+                const data = await res.json();
+                if (data && data.status !== 'empty') {
+                    updateUI(data);
+                    showStatus("Último reporte cargado desde el disco.", false);
+                }
+            } catch (e) {
+                console.log("No hay datos previos o el backend no está disponible.");
+            }
+        };
+    </script>
+</body>
+</html>
+

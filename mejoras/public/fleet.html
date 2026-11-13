@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RUNEFORGE // NEXUS FLEET V3.1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        :root { --bg-core:#0D0211; --neon-green:#39FF14; --neon-cyan:#00F0FF; --neon-red:#FF003C; --glass-bg:rgba(10,2,20,0.85); --border-neon:rgba(0,240,255,0.3); --text-main:#E0E0E0; }
+        *{box-sizing:border-box}
+        body,html{margin:0;padding:0;height:100%;background:var(--bg-core);color:var(--text-main);font-family:'Share Tech Mono',monospace;overflow:hidden}
+        #app{display:flex;height:100vh;width:100vw}
+        #sidebar{width:380px;background:var(--glass-bg);backdrop-filter:blur(10px);border-right:1px solid var(--border-neon);padding:20px;display:flex;flex-direction:column;z-index:1000;box-shadow:5px 0 20px rgba(0,0,0,.5)}
+        .header{margin-bottom:15px;border-bottom:1px dashed var(--border-neon);padding-bottom:10px}
+        .header h1{font-family:'Orbitron',sans-serif;color:var(--neon-cyan);font-size:20px;margin:0 0 5px;text-shadow:0 0 10px rgba(0,240,255,.6);letter-spacing:2px}
+        .header .status{font-size:12px;color:#888;display:flex;justify-content:space-between}
+        .header .status span{color:var(--neon-green);font-weight:bold;text-shadow:0 0 5px var(--neon-green)}
+        #kpi-bar{display:flex;justify-content:space-around;margin:10px 0;padding:8px;background:rgba(0,240,255,.05);border:1px solid var(--border-neon);border-radius:4px;font-size:11px;text-align:center}
+        #kpi-bar strong{font-family:'Orbitron',sans-serif;font-size:15px}
+        .controls{margin-bottom:15px}
+        .search-box{width:100%;background:rgba(0,0,0,.5);border:1px solid var(--border-neon);color:var(--neon-cyan);padding:10px;font-family:'Share Tech Mono',monospace;font-size:13px;border-radius:4px;outline:none;margin-bottom:10px;transition:all .3s}
+        .search-box:focus{border-color:var(--neon-cyan);box-shadow:0 0 10px rgba(0,240,255,.3)}
+        .filter-buttons{display:flex;gap:8px;flex-wrap:wrap}
+        .filter-btn{flex:1 1 auto;min-width:70px;background:transparent;border:1px solid var(--border-neon);color:#888;padding:6px;font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;border-radius:4px;transition:all .2s;text-transform:uppercase}
+        .filter-btn:hover{background:rgba(0,240,255,.1);color:var(--neon-cyan)}
+        .filter-btn.active{background:rgba(0,240,255,.2);color:var(--neon-cyan);border-color:var(--neon-cyan);box-shadow:0 0 8px rgba(0,240,255,.4)}
+        #device-list{flex:1;overflow-y:auto;padding-right:5px}
+        .device-item{background:rgba(0,240,255,.03);border:1px solid rgba(0,240,255,.2);border-radius:4px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all .2s ease;position:relative}
+        .device-item::before{content:'';position:absolute;left:0;top:0;height:100%;width:3px;background:#555;opacity:.5}
+        .device-item.online::before{background:var(--neon-green);box-shadow:0 0 5px var(--neon-green);opacity:1}
+        .device-item.offline::before{background:var(--neon-red);opacity:1}
+        .device-item:hover{background:rgba(0,240,255,.1);border-color:var(--neon-cyan);transform:translateX(3px)}
+        .device-item .alias{color:var(--neon-green);font-family:'Orbitron',sans-serif;font-weight:bold;font-size:13px;margin-bottom:4px;display:flex;justify-content:space-between}
+        .device-item .alias .badge{font-size:9px;padding:2px 5px;border-radius:2px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+        .device-item.online .badge{background:rgba(57,255,20,.2);color:var(--neon-green)}
+        .device-item.offline .badge{background:rgba(255,0,60,.2);color:var(--neon-red)}
+        .device-item .mid{color:#666;font-size:10px;margin-bottom:6px}
+        .device-item .coords{color:var(--neon-cyan);font-size:11px;display:flex;justify-content:space-between}
+        #map{flex:1;height:100%;z-index:1;background:#000}
+        .leaflet-layer{filter:invert(100%) hue-rotate(180deg) brightness(95%) contrast(110%) sepia(20%)}
+        #info-panel{position:absolute;bottom:30px;right:30px;background:var(--glass-bg);backdrop-filter:blur(10px);border:1px solid var(--neon-cyan);border-radius:8px;padding:20px;width:320px;z-index:1000;display:none;box-shadow:0 0 20px rgba(0,240,255,.15)}
+        #info-panel h3{color:var(--neon-cyan);font-family:'Orbitron',sans-serif;margin:0 0 15px;font-size:16px;border-bottom:1px solid rgba(0,240,255,.3);padding-bottom:8px}
+        #info-panel .row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.05)}
+        #info-panel .row .label{color:#888}
+        #info-panel .row .val{color:var(--neon-green);font-weight:bold}
+        #info-panel .btn{display:block;text-align:center;background:rgba(0,240,255,.1);border:1px solid var(--neon-cyan);color:var(--neon-cyan);padding:10px;margin-top:15px;text-decoration:none;font-weight:bold;border-radius:4px;transition:all .2s}
+        #info-panel .btn:hover{background:var(--neon-cyan);color:#000}
+        #info-panel .close-btn{position:absolute;top:15px;right:15px;background:none;border:none;color:var(--neon-red);font-weight:bold;cursor:pointer;font-size:18px}
+        #center-btn{position:absolute;top:20px;right:20px;z-index:1000;background:var(--glass-bg);border:1px solid var(--neon-cyan);color:var(--neon-cyan);padding:10px 15px;font-family:'Orbitron',sans-serif;font-size:12px;cursor:pointer;border-radius:4px;box-shadow:0 0 10px rgba(0,240,255,.2);display:flex;align-items:center;gap:8px;transition:all .3s}
+        #center-btn:hover{background:rgba(0,240,255,.2);box-shadow:0 0 15px rgba(0,240,255,.5)}
+        #alert-panel{position:absolute;top:20px;left:400px;z-index:1000;width:340px;max-height:260px;overflow-y:auto;background:var(--glass-bg);backdrop-filter:blur(10px);border:1px solid var(--neon-red);border-radius:8px;padding:12px;box-shadow:0 0 18px rgba(255,0,60,.18);display:none}
+        #alert-panel.visible{display:block}
+        #alert-panel h4{margin:0 0 8px;color:var(--neon-red);font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+        .alert-item{border-left:3px solid var(--neon-red);background:rgba(255,0,60,.06);padding:8px;margin-bottom:8px;font-size:11px;border-radius:3px}
+        .alert-item strong{color:var(--neon-red)}
+        .alert-item small{color:#777}
+        .pulse-marker{border-radius:50%;box-shadow:0 0 0 rgba(0,240,255,.4);animation:pulse 2s infinite}
+        @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,240,255,.7)}70%{box-shadow:0 0 0 10px rgba(0,240,255,0)}100%{box-shadow:0 0 0 0 rgba(0,240,255,0)}}
+        .cluster-icon{background:rgba(0,240,255,.15);border:1px solid var(--neon-cyan);border-radius:50%;color:var(--neon-cyan);font-family:'Orbitron',sans-serif;font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(0,240,255,.45)}
+        @media (max-width:768px){#app{flex-direction:column}#sidebar{width:100%;height:42vh;border-right:none;border-bottom:1px solid var(--border-neon);padding:15px}#map{height:58vh}#info-panel{width:calc(100% - 20px);bottom:10px;right:10px;left:10px;padding:15px}#center-btn{top:10px;right:10px;padding:8px 12px;font-size:10px}#alert-panel{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:180px}}
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="sidebar">
+        <div class="header">
+            <h1>&#9889; NEXUS FLEET</h1>
+            <div class="status">API: <span id="api-status">CONNECTING...</span></div>
+        </div>
+        <div id="kpi-bar">
+            <div><span style="color:#888;">TOTAL</span><br><strong id="kpi-total" style="color:var(--neon-cyan);">0</strong></div>
+            <div><span style="color:#888;">ONLINE</span><br><strong id="kpi-online" style="color:var(--neon-green);">0</strong></div>
+            <div><span style="color:#888;">OFFLINE</span><br><strong id="kpi-offline" style="color:var(--neon-red);">0</strong></div>
+            <div><span style="color:#888;">EN MOV.</span><br><strong id="kpi-moving" style="color:var(--neon-cyan);">0</strong></div>
+        </div>
+        <div class="controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="Buscar por MID o Alias...">
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="setFilter('all', this)">Todos</button>
+                <button class="filter-btn" onclick="setFilter('online', this)">Online</button>
+                <button class="filter-btn" onclick="setFilter('offline', this)">Offline</button>
+                <button class="filter-btn" onclick="setTelemetryFilter('moving', this)">En Mov.</button>
+                <button class="filter-btn" onclick="setTelemetryFilter('idle', this)">Ralenti</button>
+                <button class="filter-btn" onclick="setTelemetryFilter('low_fuel', this)">Comb. Bajo</button>
+            </div>
+        </div>
+        <div id="device-list"></div>
+    </div>
+    <div id="map"></div>
+    <button id="center-btn" onclick="fitAllMarkers()">CENTRAR MAPA</button>
+    <div id="alert-panel"><h4>Alertas de Flota</h4><div id="alert-list"></div></div>
+    <div id="info-panel">
+        <button class="close-btn" onclick="document.getElementById('info-panel').style.display='none'">X</button>
+        <div id="info-content"></div>
+    </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/supercluster@6.0.2/dist/supercluster.min.js"></script>
+<script>
+const API = window.location.origin;
+const map = L.map('map', { zoomControl: false }).setView([23.6345, -102.5528], 5);
+L.control.zoom({ position: 'bottomleft' }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '(c) OpenStreetMap' }).addTo(map);
+let allPositions = [], dispositivos = [], currentFilter = 'all', telemetryFilter = 'all', searchQuery = '', currentFiltered = [], scIndex = null;
+const clusterLayer = L.layerGroup().addTo(map);
+const onlineIcon = L.divIcon({ className:'pulse-marker', html:'<div style="background-color:#00F0FF;width:14px;height:14px;border-radius:50%;border:2px solid #fff;"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+const offlineIcon = L.divIcon({ className:'', html:'<div style="background-color:#FF003C;width:14px;height:14px;border-radius:50%;border:2px solid #fff;"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+async function loadDevices(){ try{ const r=await fetch(`${API}/api/dispositivos`); dispositivos=await r.json(); }catch{ dispositivos=[]; } }
+function getDeviceStatus(ts){ const m=(new Date()-new Date(ts))/1000/60; return m<10?'online':'offline'; }
+function updateKPIs(){ const t=allPositions.length; let o=0,f=0,mv=0; allPositions.forEach(p=>{ const s=getDeviceStatus(p.timestamp); if(s==='online')o++; else f++; if(s==='online'&&Number(p.speed_kph||0)>0)mv++; }); document.getElementById('kpi-total').textContent=t; document.getElementById('kpi-online').textContent=o; document.getElementById('kpi-offline').textContent=f; document.getElementById('kpi-moving').textContent=mv; }
+function renderList(){ const list=document.getElementById('device-list'); list.innerHTML=''; const filtered=allPositions.filter(p=>{ const d=dispositivos.find(x=>x.mid===p.mid)||{}; const n=(d.alias||p.mid).toLowerCase(); const mid=p.mid.toLowerCase(); const st=getDeviceStatus(p.timestamp); const ms=n.includes(searchQuery)||mid.includes(searchQuery); const mf=currentFilter==='all'||currentFilter===st; let mt=true; const sp=Number(p.speed_kph||0); const ig=p.ignition===true||p.ignition===1||p.ignition==='1'||p.ignition==='true'; const fu=Number(p.fuel_level??100); if(telemetryFilter==='moving')mt=st==='online'&&sp>0; if(telemetryFilter==='idle')mt=st==='online'&&ig&&sp<=0; if(telemetryFilter==='low_fuel')mt=fu<=15; return ms&&mf&&mt; }); filtered.forEach(p=>{ const d=dispositivos.find(x=>x.mid===p.mid)||{}; const n=d.alias&&d.alias!==p.mid?d.alias:p.mid; const st=getDeviceStatus(p.timestamp); const it=document.createElement('div'); it.className=`device-item ${st}`; it.dataset.mid=p.mid; it.innerHTML=`<div class="alias"><span>${n}</span><span class="badge">${st.toUpperCase()}</span></div><div class="mid">MID: ${p.mid}</div><div class="coords"><span>LAT: ${Number(p.lat).toFixed(4)}</span><span>LON: ${Number(p.lon).toFixed(4)}</span></div>`; it.onclick=()=>focusDevice(p.mid); list.appendChild(it); }); currentFiltered=filtered; updateKPIs(); updateMapMarkers(filtered); }
+function buildClusterIndex(ps){ const gj=ps.map(p=>({ type:'Feature', properties:{ mid:p.mid, status:getDeviceStatus(p.timestamp) }, geometry:{ type:'Point', coordinates:[Number(p.lon), Number(p.lat)] } })); scIndex=new Supercluster({ radius:60, maxZoom:17 }); scIndex.load(gj); }
+function renderClusters(){ if(!scIndex)return; clusterLayer.clearLayers(); const b=map.getBounds(); const cs=scIndex.getClusters([b.getWest(),b.getSouth(),b.getEast(),b.getNorth()], Math.round(map.getZoom())); cs.forEach(c=>{ const [lon,lat]=c.geometry.coordinates; if(c.properties.cluster){ const cnt=c.properties.point_count; const sz=Math.min(46,26+Math.log2(cnt+1)*5); const ic=L.divIcon({ className:'', html:`<div class="cluster-icon" style="width:${sz}px;height:${sz}px;">${cnt}</div>`, iconSize:[sz,sz], iconAnchor:[sz/2,sz/2] }); L.marker([lat,lon],{icon:ic}).addTo(clusterLayer); } else { const st=c.properties.status; const ic=st==='online'?onlineIcon:offlineIcon; L.marker([lat,lon],{icon:ic}).addTo(clusterLayer).on('click',()=>focusDevice(c.properties.mid)); } }); }
+function updateMapMarkers(f){ currentFiltered=f; buildClusterIndex(f); renderClusters(); }
+async function loadPositions(){ try{ const r=await fetch(`${API}/api/posiciones/latest`); if(!r.ok)throw new Error('API Offline'); document.getElementById('api-status').innerText='ONLINE'; document.getElementById('api-status').style.color='var(--neon-green)'; allPositions=await r.json(); await loadDevices(); renderList(); }catch(e){ document.getElementById('api-status').innerText='OFFLINE'; document.getElementById('api-status').style.color='var(--neon-red)'; } }
+function focusDevice(mid){ const p=allPositions.find(x=>x.mid===mid); const d=dispositivos.find(x=>x.mid===mid)||{}; if(!p)return; map.setView([Number(p.lat),Number(p.lon)],14); document.querySelectorAll('.device-item').forEach(el=>el.classList.toggle('active',el.dataset.mid===mid)); const c=document.getElementById('info-content'); c.innerHTML=`<h3>${d.alias||mid}</h3><div class="row"><span class="label">MID</span><span class="val">${mid}</span></div><div class="row"><span class="label">Latitud</span><span class="val">${Number(p.lat).toFixed(6)}</span></div><div class="row"><span class="label">Longitud</span><span class="val">${Number(p.lon).toFixed(6)}</span></div><div class="row"><span class="label">Velocidad</span><span class="val">${Number(p.speed_kph||0)} km/h</span></div><div class="row"><span class="label">Ultimo Reporte</span><span class="val">${new Date(p.timestamp).toLocaleString()}</span></div><a class="btn" href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank">ABRIR EN GOOGLE MAPS</a>`; document.getElementById('info-panel').style.display='block'; }
+function setFilter(f,b){ currentFilter=f; telemetryFilter='all'; document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderList(); }
+function setTelemetryFilter(f,b){ telemetryFilter=f; currentFilter='all'; document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderList(); }
+function fitAllMarkers(){ const b=L.latLngBounds(currentFiltered.map(p=>[Number(p.lat),Number(p.lon)])); if(b.isValid())map.fitBounds(b,{padding:[50,50]}); }
+function addAlert(a){ const p=document.getElementById('alert-panel'); const l=document.getElementById('alert-list'); p.classList.add('visible'); const it=document.createElement('div'); it.className='alert-item'; it.innerHTML=`<strong>${a.type||'ALERTA'}</strong><br><span>${a.message||''}</span><br><small>${new Date().toLocaleTimeString()}</small>`; l.prepend(it); while(l.children.length>20)l.removeChild(l.lastChild); }
+function initAlertStream(){ if(!window.EventSource)return; const s=new EventSource(`${API}/api/alerts/stream`); s.addEventListener('alert',e=>{ try{ addAlert(JSON.parse(e.data)); }catch{ addAlert({type:'RAW',message:e.data}); } }); s.onerror=()=>{}; }
+document.getElementById('searchInput').addEventListener('input',e=>{ searchQuery=e.target.value.toLowerCase(); renderList(); });
+map.on('moveend zoomend', renderClusters);
+loadPositions(); initAlertStream(); setInterval(loadPositions, 5000);
+</script>
+</body>
+</html>

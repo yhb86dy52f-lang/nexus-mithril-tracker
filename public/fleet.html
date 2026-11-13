@@ -530,9 +530,7 @@
       height: 100%
     }
 
-    .leaflet-layer {
-      filter: invert(100%) hue-rotate(180deg) brightness(96%) contrast(92%) saturate(.75)
-    }
+    
 
     .leaflet-div-icon {
       background: transparent !important;
@@ -1091,6 +1089,79 @@
     .btn-row:hover { transform: translateY(-1px); border-color:#3A3A5A; }
     @media (max-width: 900px) { .export-bar { border-radius: 14px; padding: 8px; } }
 
+        /* MEJORA VISUAL V4 */
+    .pulse-marker {
+      animation: marker-pulse 2s infinite;
+    }
+    @keyframes marker-pulse {
+      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .leaflet-popup-content-wrapper {
+      background: rgba(17, 17, 28, 0.95);
+      color: #fff;
+      border: 1px solid #3B3B5C;
+      backdrop-filter: blur(4px);
+    }
+    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
+    /* MEJORA VISUAL V4 */
+    .pulse-marker {
+      animation: marker-pulse 2s infinite;
+    }
+    @keyframes marker-pulse {
+      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .leaflet-popup-content-wrapper {
+      background: rgba(17, 17, 28, 0.95);
+      color: #fff;
+      border: 1px solid #3B3B5C;
+      backdrop-filter: blur(4px);
+    }
+    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
+    /* EFECTO 3D Y LATIDO VIVO */
+    .pulse-marker {
+      border-radius: 50%;
+      animation: marker-pulse 2s infinite;
+    }
+    @keyframes marker-pulse {
+      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    /* Estilo de los globos de información (Popups) */
+    .leaflet-popup-content-wrapper {
+      background: rgba(17, 17, 28, 0.95);
+      color: #fff;
+      border: 1px solid #3B3B5C;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
+    /* EFECTO 3D Y LATIDO VIVO */
+    .pulse-marker {
+      animation: marker-pulse 2s infinite;
+    }
+    @keyframes marker-pulse {
+      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .leaflet-popup-content-wrapper {
+      background: rgba(17, 17, 28, 0.95);
+      color: #fff;
+      border: 1px solid #3B3B5C;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
+    
+</style>
+    <style>
+      /* Filtro para hacer el mapa de OpenStreetMap oscuro */
+      .leaflet-tile-pane {
+        filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+      }
     </style>
 </head>
 
@@ -1107,7 +1178,8 @@
         <button class="nav-btn" id="btn-config" onclick="showConfigView()">⚙️ CONFIG</button>
         <button class="nav-btn" style="color:#FF2EA6; border-color:#FF2EA6;"
           onclick="window.location.href='/diagnostico.html'">🔬 LABORATORIO</button>
-        <button class="btn-danger" id="btn-power" onclick="toggleSystemPower()">APAGAR</button>
+        <button class="nav-btn" id="btn-osiris-cctv" style="color:#22D3EE; border-color:#22D3EE;">CCTV TEXAS</button>
+ <button class="btn-danger" id="btn-power" onclick="toggleSystemPower()">APAGAR</button></button>
       </nav>
       <div class="head-right">
         <div class="status-pill"><span class="dot"></span> <span id="api-status">EN LINEA</span></div>
@@ -1335,19 +1407,25 @@
     }
     setInterval(tickClock, 1000); tickClock();
 
-    map = L.map('map', { zoomControl: false }).setView([23.6345, -102.5528], 5);
+        map = L.map('map', { zoomControl: false }).setView([23.6345, -102.5528], 5);
     window.NEXUS_MAP = map;
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-    function makeIcon(color, pulsing) {
-      return L.divIcon({
-        className: '',
-        html: '<div style="width:18px;height:18px;border-radius:50%;background:' + color + ';border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5)' + (pulsing ? ',0 0 0 6px ' + color + '33' : '') + '"></div>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9]
-      });
+    // Mapa Base: OpenStreetMap (El CSS oscuro se aplicará)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; Esri'
+    }).addTo(map);
+
+        function makeIcon(color, pulsing) {
+        return L.divIcon({
+            className: '',
+            html: '<div style="width:18px;height:18px;border-radius:50%;background-color:' + color + ';border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.8);"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
     }
+
     const onlineIcon = makeIcon('#22C55E', true);
     const offlineIcon = makeIcon('#94A3B8', false);
     const selectedIcon = makeIcon('#A855F7', true);
@@ -1868,6 +1946,87 @@
     loadPositions();
     setInterval(loadPositions, 2000);
   </script>
+<script src="/osiris-layers.js"></script>
+  <script>
+    // CAPA OSINT: SISMOS EN VIVO (USGS)
+    let capaSismos = null;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnSismos = document.getElementById('btn-usgs-quakes');
+      if (btnSismos) {
+        btnSismos.addEventListener('click', async () => {
+          if (!window.NEXUS_MAP) return;
+          
+          btnSismos.innerText = 'Cargando...';
+          btnSismos.disabled = true;
+          
+          try {
+            const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson');
+            const data = await res.json();
+            
+            if (capaSismos) window.NEXUS_MAP.removeLayer(capaSismos);
+            
+            capaSismos = L.geoJSON(data, {
+              pointToLayer: function (feature, latlng) {
+                const mag = feature.properties.mag || 0;
+                let color = '#10B981'; // Verde (Bajo)
+                let radius = 4;
+                if (mag >= 4.5) { color = '#EF4444'; radius = 8; } // Rojo (Fuerte)
+                else if (mag >= 2.5) { color = '#F59E0B'; radius = 6; } // Naranja (Medio)
+                
+                return L.circleMarker(latlng, {
+                  radius: radius,
+                  fillColor: color,
+                  color: '#fff',
+                  weight: 1,
+                  opacity: 1,
+                  fillOpacity: 0.8
+                });
+              },
+              onEachFeature: function (feature, layer) {
+                if (feature.properties && feature.properties.place) {
+                  layer.bindPopup('<b>🌎 Sismo M' + feature.properties.mag + '</b><br>' + feature.properties.place);
+                }
+              }
+            }).addTo(window.NEXUS_MAP);
+            
+            // Opcional: Hacer zoom a la zona con más sismos (o solo avisar)
+            if (data.features.length > 0) {
+              window.NEXUS_MAP.fitBounds(capaSismos.getBounds(), { padding: [50, 50] });
+            }
+            
+            btnSismos.innerText = '🌎 SISMOS (ON)';
+            btnSismos.style.backgroundColor = '#F59E0B';
+            btnSismos.style.color = '#000';
+          } catch (err) {
+            console.error('Error cargando USGS:', err);
+            btnSismos.innerText = 'Error USGS';
+          } finally {
+            btnSismos.disabled = false;
+          }
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
