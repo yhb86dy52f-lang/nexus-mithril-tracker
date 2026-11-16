@@ -1,5 +1,5 @@
-const CACHE = 'nexus-mithril-satellite-201323';
-const ASSETS = ['/fleet.html', '/diagnostico.html', '/manifest.json', '/osiris-layers.js'];
+const CACHE = 'nexus-mithril-osiris-v4';
+const ASSETS = ['/fleet.html', '/diagnostico.html', '/manifest.json', '/osiris-layers.js', '/anduril-icono.jpg'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -16,7 +16,6 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
-  // CORREGIDO: /api/export/ NUNCA se cachea, es descarga. Siempre red.
   if (url.includes('/api/export/')) {
     e.respondWith(fetch(e.request));
     return;
@@ -27,20 +26,3 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(caches.match(e.request).then((h) => h || fetch(e.request)));
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -285,7 +285,7 @@
 
     let map, markers = {}, allPositions = [], filteredPositions = [];
     let currentSearch = '', currentSourceFilter = 'all', selectedId = null;
-    let timeHistory = [], timeIdx = 0, timePlaying = false, timeTimer = null, timeMarker = null;
+    let timeHistory = [], timeIdx = 0, timePlaying = false, timeTimer = null, timeMarker = null, timePolyline = null;
 
     function timeAgo(ts) {
       if (!ts) return 'SIN DATOS';
@@ -496,10 +496,25 @@
 
     async function loadTimeHistory(deviceId) {
       const info = document.getElementById('ts-info');
+      // Limpiar polilínea anterior
+      if (timePolyline) { map.removeLayer(timePolyline); timePolyline = null; }
       try {
         const qs = deviceId ? '?device=' + encodeURIComponent(deviceId) + '&limit=200' : '?limit=200';
         const j = await api('/api/posiciones/history' + qs);
         timeHistory = Array.isArray(j) ? j.slice().reverse() : [];
+        
+        // Dibujar polilínea completa (recorrido total)
+        if (timeHistory.length > 1) {
+          const latlngs = timeHistory.map(p => [Number(p.lat), Number(p.lon)]);
+          timePolyline = L.polyline(latlngs, {
+            color: 'var(--neon-purple)',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '5, 10',
+            lineCap: 'round'
+          }).addTo(map);
+        }
+
         const range = document.getElementById('ts-range');
         range.max = Math.max(0, timeHistory.length - 1);
         range.value = timeHistory.length ? timeHistory.length - 1 : 0;

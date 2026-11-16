@@ -1,0 +1,13 @@
+#!/bin/sh
+# NEXUS-MITHRIL: Protecci?n de la rama can?nica
+while read local_ref local_sha remote_ref remote_sha
+do
+    if [ "$remote_ref" = "refs/heads/stable" ]; then
+        echo "====================================================="
+        echo "? PUSH BLOQUEADO: La rama 'stable' es inmutable localmente."
+        echo "   Para actualizar producci?n, crea un Pull Request en GitHub."
+        echo "====================================================="
+        exit 1
+    fi
+done
+exit 0
