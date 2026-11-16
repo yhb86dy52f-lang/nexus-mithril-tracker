@@ -2,22 +2,9 @@ const { fetchHubbleDevices } = require('../services/hubble-client');
 const db = require('../services/db');
 const { broadcast } = require('../services/ws-broadcast');
 const { checkDevice } = require('../services/geofence');
-const fs = require('fs');
-const path = require('path');
 
-function getWebhookSecret() {
-  // CORREGIDO v2: antes solo leia process.env, pero config-routes guarda el secret en data/config.json.
-  // Ahora lee env primero, luego config.json, sin cambiar valores ni APIs.
-  if (process.env.HUBBLE_WEBHOOK_SECRET) return process.env.HUBBLE_WEBHOOK_SECRET;
-  try {
-    const p = path.join(__dirname, 'data', 'config.json');
-    if (fs.existsSync(p)) {
-      const cfg = JSON.parse(fs.readFileSync(p, 'utf8'));
-      if (cfg.hubbleWebhookSecret) return cfg.hubbleWebhookSecret;
-    }
-  } catch (e) {}
-  return '';
-}
+
+
 
 module.exports = async function hubbleRoutes(fastify, opts) {
   // 1. Ruta manual de sincronización (Pull) - API y URLs intactas

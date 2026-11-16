@@ -124,4 +124,4 @@ function getRawSMS(device, limit = 100) {
   return db.prepare('SELECT * FROM raw_sms WHERE device = ? ORDER BY id DESC LIMIT ?').all(device, limit);
 }
 
-module.exports = { saveRawSMS, getRawSMS, saveRawSMS, getRawSMS, saveRawSMS, getRawSMS, db, saveTelemetry, insertGpsPosition, getLatestPositions, getHistory, saveGeofenceEvent };
+module.exports = { saveRawSMS, getRawSMS, db, saveTelemetry, insertGpsPosition, getLatestPositions, getHistory, saveGeofenceEvent };
