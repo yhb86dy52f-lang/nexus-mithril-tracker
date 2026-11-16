@@ -100,7 +100,15 @@
     <button class="map-btn" id="btn-spin">GIRAR</button>
   </div>
 
-  <script>
+      <script>
+      let API_KEY = localStorage.getItem('nexus_api_key');
+      if (!API_KEY) {
+        API_KEY = prompt('🔒 NEXUS-MITHRIL OSIRIS 3D\nIntroduce la API Key (por defecto: RF-NEXUS-SECURE-2026):');
+        if (API_KEY) localStorage.setItem('nexus_api_key', API_KEY);
+        else { document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:20vh">Acceso Denegado</h1>'; throw new Error('Auth cancelada'); }
+      }
+    </script>
+    <script>
     // Configuración de carga de MapLibre
     window.__mlSources = ['/vendor/maplibre-gl/maplibre-gl.js', '/vendor/maplibre-gl@5.7.0/maplibre-gl.js'];
     window.__mlReady = new Promise((resolve, reject) => {
@@ -267,7 +275,7 @@
     // AHORA JALA DE LA MISMA FUENTE QUE FLEET.HTML (SMS + HUBBLE)
     async function loadFleet() {
       try {
-        const res = await fetch('/api/posiciones/latest', { cache: 'no-store' });
+        const res = await fetch('/api/posiciones/latest', { cache: 'no-store', headers: { 'x-api-key': API_KEY } });
         if (!res.ok) return;
         const data = await res.json();
         const arr = Array.isArray(data) ? data : (data.rows || []);
@@ -322,7 +330,7 @@
     document.getElementById('unit-search').addEventListener('input', renderFleet);
     map.on('load', () => { loadFleet(); });
     loadFleet();
-    setInterval(loadFleet, 5000);
+    setInterval(loadFleet, 30000); // Respaldo cada 30s.
     
     }).catch(e => { console.error('[OSIRIS] MapLibre no cargó', e); });
   </script>
