@@ -11,7 +11,8 @@ function parseKWText(text) {
   };
   var estado = 'KW OK';
   if (kw.lev0 != null) { estado = 'T1=' + kw.lev0 + 'L T2=' + (kw.lev1 || 0) + 'L'; }
-  return { tempC1: kw.temp0, tempC2: kw.temp1, voltU: kw.accum0 ? kw.accum0 / 1000 : null,
+  return {
+    family: 'KW', tempC1: kw.temp0, tempC2: kw.temp1, voltU: kw.accum0 ? kw.accum0 / 1000 : null,
            voltG: kw.accum1 ? kw.accum1 / 1000 : null, estado: estado, rssi: kw.rssi };
 }
 function analyzeKWText(rawText) { try { return parseKWText(rawText); } catch (e) { return null; } }

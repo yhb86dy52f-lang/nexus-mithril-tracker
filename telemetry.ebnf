@@ -1,0 +1,35 @@
+Start
+  = CT / KW / R0
+
+CT
+  = "!" "E" esn:$([0-9]+) "FFFF" payload:$([0-9A-Fa-f]+)
+  {
+    let c3E70 = (payload.match(/3E70/g) || []).length;
+    return { family: "CT", esn: esn, telemetry: { ct_data: { payload: payload, estado: c3E70 >= 2 ? "FALLA" : "OK", c3E70: c3E70 } } };
+  }
+
+KW
+  = "rssi=" rssi:$("-"? [0-9]+) _ "," _ params:KW_Params
+  { return { family: "KW", telemetry: { kw_data: { rssi: parseInt(rssi, 10), ...params } } }; }
+
+KW_Params
+  = first:KW_Param rest:(_ "," _ p:KW_Param { return p; })*
+  { let res = {}; res[first.key] = first.value; rest.forEach(p => res[p.key] = p.value); return res; }
+
+KW_Param
+  = key:$([a-zA-Z0-9_]+) "=" value:$("-"? [0-9.]+)
+  {
+    let k = key;
+    if (key === 'esc_lev_0') k = 'lev0';
+    else if (key === 'esc_lev_1') k = 'lev1';
+    else if (key === 'esc_temp_0') k = 'temp0';
+    else if (key === 'esc_temp_1') k = 'temp1';
+    return { key: k, value: parseFloat(value) };
+  }
+
+R0
+  = "GPS:" fix:$([^ ]+) _ "LAT:" lat:$([^ ]+) _ "LON:" lon:$([^ ]+)
+  { return { family: "R0", telemetry: { gps: { fix: fix, lat: parseFloat(lat), lon: parseFloat(lon) } } }; }
+
+_ "whitespace"
+  = [ \t\r\n]*

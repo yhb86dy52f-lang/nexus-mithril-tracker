@@ -1,0 +1,287 @@
+require('dotenv').config();
+const path = require('path');
+const Fastify = require('fastify');
+const db = require('./services/db');
+const fs = require('fs');
+const wsBroadcast = require('./services/ws-broadcast');
+const geofenceMod = require('./services/geofence');
+const gpsRouter = require('./routes/gps_router');
+const hubbleRoutes = require('./routes/hubble-routes');
+const configRoutes = require('./routes/config-routes');
+const diagnosticoRoutes = require('./routes/diagnostico-routes');
+
+
+global.isSystemPaused = false;
+const API_KEY = process.env.API_KEY || 'RF-NEXUS-SECURE-2026';
+const PORT = Number(process.env.PORT || 3100);
+const HOST = process.env.HOST || '0.0.0.0';
+
+async function build() {
+  const fastify = Fastify({ logger: true });
+  const sseClients = new Set();
+
+  // 1. Permisos de Seguridad (CSP)
+  fastify.addHook('onSend', async (request, reply, payload) => {
+    reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.cartocdn.com https://server.arcgisonline.com https://unpkg.com blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://ntfy.sh https://unpkg.com https://*.tile.openstreetmap.org;");
+    return payload;
+  });
+
+  await fastify.register(require('@fastify/cors'), { origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] });
+  await fastify.register(require('@fastify/websocket'));
+  await fastify.register(require('@fastify/static'), { root: path.join(__dirname, '..', 'public'), prefix: '/' });
+
+  // 2. ÚNICO Guardia de Seguridad (Evita duplicados)
+    fastify.addHook('onRequest', async (req, reply) => {
+    if ((req.url || '').startsWith('/api/')) {
+      // 1. Permitir Webhook de Hubble (tiene su propio token)
+      if (req.url === '/api/hubble/webhook') return; 
+      
+      // 2. Permitir lecturas GET (necesario para el Viewer público)
+      const isReadOnly = req.method === 'GET' && (
+        req.url.startsWith('/api/posiciones/') || 
+        req.url.startsWith('/api/hubble/devices') || 
+        req.url.startsWith('/api/device/') ||
+        req.url.startsWith('/api/export/') ||
+        req.url.startsWith('/api/system/status') || req.url.startsWith('/api/osiris/')
+      );
+      if (isReadOnly) return;
+      
+      // 3. DETECCIÓN DE ENTORNO PÚBLICO (Tailscale Funnel)
+      const host = req.headers.host || '';
+      const isPublic = host.includes('.ts.net') || req.headers['tailscale-funnel-request'] !== undefined;
+      
+      if (isPublic) {
+        // Si es público, RECHAZAR cualquier escritura
+        reply.code(403).send({ ok: false, error: 'Acceso denegado: El modo Visor es de solo lectura.' });
+        return;
+      }
+
+      // 4. Panel Master local (localhost o red local)
+      if (req.headers['sec-fetch-site'] === 'same-origin') return;
+      
+      const key = req.headers['x-api-key'];
+      if (API_KEY && key !== API_KEY) {
+        reply.code(401).send({ ok: false, error: 'unauthorized' });
+        return;
+      }
+    }
+  });
+
+  // 3. WebSockets
+  fastify.get('/ws', { websocket: true }, (conn) => {
+    const socket = conn.socket || conn;
+    wsBroadcast.addSocket(socket);
+    socket.send(JSON.stringify({ type: 'hello', msg: 'conectado a NEXUS-MITHRIL' }));
+    socket.on('close', () => wsBroadcast.removeSocket(socket));
+    socket.on('error', () => wsBroadcast.removeSocket(socket));
+  });
+
+  // 4. Rutas
+  await fastify.register(gpsRouter);
+  await fastify.register(hubbleRoutes);
+  
+
+  // 5. Telemetría IoT
+  fastify.post('/api/telemetria', async (req, reply) => {
+    const b = req.body || {};
+    const lat = Number(b.lat), lon = Number(b.lon);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) return reply.code(400).send({ ok: false, error: 'lat invalida' });
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) return reply.code(400).send({ ok: false, error: 'lon invalida' });
+    if (!b.device) return reply.code(400).send({ ok: false, error: 'falta device' });
+
+    const data = { device: b.device, nombre: b.nombre || b.device, lat, lon, velocidad: Number(b.velocidad ?? 0), temperatura: b.temperatura ?? null, vibracion: b.vibracion ?? null, bateria_v: b.bateria_v ?? null, rpm: b.rpm ?? null, fuente: 'personal', timestamp: new Date().toISOString() };
+    db.saveTelemetry(data);
+    
+    const events = geofenceMod.checkDevice(data.device, lat, lon);
+    for (const ev of events) {
+      db.saveGeofenceEvent(ev);
+      wsBroadcast.broadcast({ type: 'geofence', ...ev });
+    }
+    
+    wsBroadcast.broadcast({ type: 'telemetria', ...data });
+    if(typeof global.emitSSE === 'function') global.emitSSE({ type: 'telemetria', ...data });
+    return { ok: true };
+  });
+
+  fastify.get('/api/posiciones/latest', async () => {
+    if (global.isSystemPaused) return [];
+    const rows = db.getLatestPositions();
+    return rows.map(r => ({
+      ...r, dispositivo_id: r.device, mid: r.device, fuente: r.fuente || 'sms'
+    }));
+  });
+  
+  fastify.get('/api/posiciones/history', async (req) => {
+    const device = req.query.device || null;
+    const limit = parseInt(req.query.limit || 100, 10) || 100;
+    return db.getHistory(device, limit);
+  });
+
+  fastify.post('/api/ntfy/send-sms', async (request, reply) => {
+    try {
+      let { deviceId, phoneNumber, command } = request.body || {};
+      if (!deviceId) return reply.status(400).send({ error: 'Falta deviceId' });
+      let key = String(deviceId).toUpperCase().trim().replace(/\s+/g, ' ');
+      key = key.replace(/^(CT|KW)\s*(\d+)/, '$1 $2');
+      
+      if (!phoneNumber) {
+        const phonesPath = path.join(__dirname, 'data', 'device_phones.json');
+        if (fs.existsSync(phonesPath)) {
+          const phones = JSON.parse(fs.readFileSync(phonesPath, 'utf8'));
+          phoneNumber = phones[key] || phones[String(deviceId).toUpperCase().trim()] || null;
+        }
+      }
+      
+      const NTFY_TOPIC = process.env.NTFY_TOPIC || 'runeforge-comando-mithril';
+      const ntfyUrl = 'https://ntfy.sh/' + NTFY_TOPIC;
+      const payload = { deviceId, phoneNumber: phoneNumber || null, command: command || '!R5' };
+      const shortcutUrl = 'shortcuts://run-shortcut?name=Comando%20Mithril&input=text&text=' + encodeURIComponent(JSON.stringify(payload));
+      
+      await fetch(ntfyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: NTFY_TOPIC,
+          message: 'Comando para ' + deviceId + ': ' + (command || '!R5'),
+          title: 'Comando Mithril',
+          priority: 5,
+          tags: ['robot'],
+          actions: [{ action: 'view', label: 'Ejecutar Atajo', url: shortcutUrl }]
+        })
+      });
+      return reply.send({ status: 'OK', deviceId, phoneNumber: phoneNumber || null, command: command || '!R5' });
+    } catch (err) {
+      return reply.status(500).send({ error: 'Error contactando ntfy' });
+    }
+  });
+
+  fastify.get('/api/stream', (request, reply) => {
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.flushHeaders();
+    const client = reply.raw;
+    sseClients.add(client);
+    client.write('data: {"type":"connected"}\n\n');
+    request.raw.on('close', () => sseClients.delete(client));
+  });
+
+  global.emitSSE = function(data) {
+    const payload = `data: ${JSON.stringify(data)}\n\n`;
+    for (const client of sseClients) {
+      try { client.write(payload); } catch (e) {}
+    }
+  };
+
+
+  // 4b. Exportar Raw Data - CORREGIDO v2: usa columnas REALES de db.js (posiciones)
+  // No inventa columna 'raw' si no existe, usa: id, device, nombre, lat, lon, velocidad,
+  // temperatura, vibracion, bateria_v, rpm, rssi, voltaje, estado_sensores, fuente, timestamp, raw (opcional)
+  // GET /api/export/raw?device=CT%20123&limit=1000&format=csv|json|txt&fuente=sms
+  fastify.get('/api/export/raw', async (req, reply) => {
+    const device = (req.query.device || '').toString().trim() || null;
+    const fuenteQ = (req.query.fuente || '').toString().trim() || null;
+    const limitRaw = parseInt(req.query.limit || 1000, 10);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 10000) : 1000;
+    const format = (req.query.format || 'csv').toString().toLowerCase();
+
+    let rows = [];
+    try {
+      rows = db.getHistory(device, limit) || [];
+    } catch (e) {
+      fastify.log.error(e);
+      return reply.code(500).send({ ok: false, error: 'error leyendo db' });
+    }
+    if (fuenteQ) rows = rows.filter((r) => String(r.fuente || '') === fuenteQ);
+
+    const norm = rows.map((r) => ({
+      id: r.id ?? '',
+      device: r.device || '',
+      nombre: r.nombre || r.device || '',
+      lat: r.lat ?? '',
+      lon: r.lon ?? '',
+      velocidad: r.velocidad ?? '',
+      temperatura: r.temperatura ?? '',
+      vibracion: r.vibracion ?? '',
+      bateria_v: r.bateria_v ?? '',
+      rpm: r.rpm ?? '',
+      rssi: r.rssi ?? '',
+      voltaje: r.voltaje ?? '',
+      estado_sensores: r.estado_sensores ?? '',
+      fuente: r.fuente || 'sms',
+      timestamp: r.timestamp || '',
+      raw: r.raw || '',
+    }));
+
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const safeDevice = device ? device.replace(/[^A-Za-z0-9_-]+/g, '_') + '-' : '';
+    const baseName = `raw-data-${safeDevice}${stamp}`;
+
+    if (format === 'json') {
+      reply.header('Content-Type', 'application/json; charset=utf-8');
+      reply.header('Content-Disposition', `attachment; filename="${baseName}.json"`);
+      return reply.send({ ok: true, count: norm.length, device, rows: norm });
+    }
+    if (format === 'txt') {
+      const lines = norm.map((r) => [r.timestamp, r.device, r.lat, r.lon, r.velocidad, r.rssi, r.voltaje, r.estado_sensores, r.raw].filter((v) => v !== '').join(' | '));
+      reply.header('Content-Type', 'text/plain; charset=utf-8');
+      reply.header('Content-Disposition', `attachment; filename="${baseName}.txt"`);
+      return reply.send(lines.join('\n'));
+    }
+    // Default CSV - headers = columnas reales de db.js
+    const headers = ['id','device','nombre','lat','lon','velocidad','temperatura','vibracion','bateria_v','rpm','rssi','voltaje','estado_sensores','fuente','timestamp','raw'];
+    const esc = (v) => {
+      const s = String(v ?? '');
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+    const csv = [headers.join(',')].concat(norm.map((r) => headers.map((h) => esc(r[h])).join(','))).join('\n');
+    reply.header('Content-Type', 'text/csv; charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="${baseName}.csv"`);
+    return reply.send(csv);
+  });
+
+  
+  fastify.get('/api/device/:device/raw-sms', async (req, reply) => {
+    try {
+      const rows = db.getRawSMS(req.params.device, 100);
+      return rows;
+    } catch (e) {
+      req.log.error('RAW SMS ERROR:', e.message);
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
+  
+  fastify.get('/api/system/status', async () => {
+    return { paused: global.isSystemPaused };
+  });
+
+  fastify.post('/api/system/toggle', async (req, reply) => {
+    const { action } = req.body || {};
+    if (action === 'pause') global.isSystemPaused = true;
+    else if (action === 'resume') global.isSystemPaused = false;
+    return { status: 'OK', paused: global.isSystemPaused };
+  });
+
+  await fastify.register(configRoutes);
+  await fastify.register(diagnosticoRoutes);
+  return fastify;
+}
+
+async function main() {
+  const app = await build();
+  await app.register(require('./routes/osiris'));
+  await app.listen({ port: PORT, host: HOST });
+}
+if (require.main === module) main();
+module.exports = { build };
+
+
+
+
+
+
+
+
+

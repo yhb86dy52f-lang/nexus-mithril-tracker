@@ -1,6 +1,5 @@
 async function osirisRoutes(fastify) {
   fastify.get('/api/osiris/cctv', async (req, reply) => {
-    // Forzamos las cámaras Mock para evitar bloqueos de red
     const mockCameras = [
       { id: "cam-1", name: "El Paso - Puente Internacional", lat: 31.758, lon: -106.486 },
       { id: "cam-2", name: "Ciudad Juárez - Centro", lat: 31.690, lon: -106.424 },
@@ -13,7 +12,6 @@ async function osirisRoutes(fastify) {
       { id: "cam-9", name: "San Diego", lat: 32.715, lon: -117.161 },
       { id: "cam-10", name: "Nogales", lat: 31.340, lon: -110.934 }
     ];
-    
     return reply.code(200).send({ ok: true, region: 'texas', cameras: mockCameras, mock: true });
   });
 

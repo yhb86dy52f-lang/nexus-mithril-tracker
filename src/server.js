@@ -22,11 +22,11 @@ async function build() {
 
   // 1. Permisos de Seguridad (CSP)
   fastify.addHook('onSend', async (request, reply, payload) => {
-    reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.cartocdn.com https://server.arcgisonline.com https://*.basemaps.cartocdn.com https://*.cartocdn.com https://server.arcgisonline.com https://*.basemaps.cartocdn.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://ntfy.sh https://unpkg.com https://*.tile.openstreetmap.org;");
+    reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://tiles.basemaps.cartocdn.com https://demotiles.maplibre.org https://server.arcgisonline.com https://services.arcgisonline.com blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://ntfy.sh https://unpkg.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://tiles.basemaps.cartocdn.com https://demotiles.maplibre.org https://server.arcgisonline.com https://services.arcgisonline.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org;");
     return payload;
   });
 
-  await fastify.register(require('@fastify/cors'), { origin: true });
+  await fastify.register(require('@fastify/cors'), { origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] });
   await fastify.register(require('@fastify/websocket'));
   await fastify.register(require('@fastify/static'), { root: path.join(__dirname, '..', 'public'), prefix: '/' });
 

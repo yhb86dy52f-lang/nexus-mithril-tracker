@@ -3,8 +3,8 @@
 // Requiere ./ct.js, ./kw.js, ./r0.js (misma carpeta). No ./parsers/ct.js.
 // _upgrade_v3/index.js es solo un wrapper que re-exporta este archivo para que diagnostico-routes no se rompa.
 
-const { parseCT } = require('./ct.js');
-const { parseKW } = require('./kw.js');
+const { parseCTFrame } = require('./ct.js');
+const { parseKWText } = require('./kw.js');
 const { parseR0 } = require('./r0.js');
 
 // F1 - Filtro puro: ¿esto tiene forma de bloque CalAmp? Si no, UNKNOWN, no intentar parsear.
@@ -41,8 +41,8 @@ function parseAnySMS(input) {
   }
   try {
     const family = detectFamily(raw);
-    if (family === 'CT') return parseCT(raw);
-    if (family === 'KW') return parseKW(raw);
+    if (family === 'CT') return parseCTFrame(raw);
+    if (family === 'KW') return parseKWText(raw);
     return parseR0(raw);
   } catch (e) {
     return { family: 'UNKNOWN', estado: 'ERROR PARSER', error: e.message, original: raw.slice(0, 200) };

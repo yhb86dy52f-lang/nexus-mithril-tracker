@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXUS-MITHRIL - MODO OSIRIS 2D</title>
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
+  #map { position: absolute; inset: 0; background: #FF0000; }
+  
+  .sidebar { position: absolute; left: 20px; top: 20px; width: 320px; max-height: 90vh; background: rgba(12,12,20,.85); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 15px; z-index: 10; display: flex; flex-direction: column; overflow: hidden; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .header h2 { font-size: 14px; letter-spacing: 1px; color: #E8C547; }
+  .kpis { display: flex; gap: 10px; margin-bottom: 15px; }
+  .kpi { flex: 1; background: rgba(255,255,255,.05); padding: 8px; border-radius: 6px; text-align: center; }
+  .kpi b { display: block; font-size: 18px; color: #fff; }
+  .kpi small { font-size: 10px; color: #9A9AB0; text-transform: uppercase; }
+  .list { overflow-y: auto; flex: 1; }
+  .item { padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,.03); border-radius: 8px; border-left: 3px solid #555; cursor: pointer; transition: background 0.2s; }
+  .item:hover { background: rgba(255,255,255,.1); }
+  .item.online { border-left-color: #00FF88; background: rgba(0,255,136,.05); }
+  .item b { display: block; font-size: 13px; margin-bottom: 4px; }
+  .item small { font-size: 10px; color: #9A9AB0; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="sidebar">
+  <div class="header"><h2>FLOTA NEXUS</h2><span id="status" style="color:#FF3D3D; font-size:12px;">DESCONECTADO</span></div>
+  <div class="kpis">
+    <div class="kpi"><b id="total">0</b><small>TOTAL</small></div>
+    <div class="kpi"><b id="online">0</b><small>EN LINEA</small></div>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<script>
+  // USAMOS EL ESTILO OFICIAL DE MAPLIBRE (Nunca falla)
+  window.addEventListener('error', function(e) {
+    var errDiv = document.createElement('div');
+    errDiv.style.cssText = 'position:absolute;top:10px;right:10px;background:#000;color:#FF0000;padding:20px;z-index:9999;font-family:monospace;border:2px solid red;max-width:500px;';
+    errDiv.innerHTML = '<b>ERROR EN EL MAPA:</b><br>' + e.message + '<br><small>' + (e.filename||'') + ':' + (e.lineno||'') + '</small>';
+    document.body.appendChild(errDiv);
+});
+var map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://demotiles.maplibre.org/style.json',
+    center: [-103.52, 25.54],
+    zoom: 6
+  });
+
+  // Si el mapa base falla, pintamos el fondo de gris oscuro
+  map.on('error', function(e) {
+    console.warn('MapLibre error:', e);
+    document.getElementById('map').style.background = '#1a1a24';
+  });
+
+  var FLEET = [];
+  
+  map.on('load', function() {
+    map.addSource('fleet', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    
+    map.addLayer({
+      id: 'fleet-points',
+      type: 'circle',
+      source: 'fleet',
+      paint: {
+        'circle-radius': 7,
+        'circle-color': ['case', ['==', ['get', 'online'], true], '#00FF88', '#9CA3AF'],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#000',
+        'circle-opacity': 0.9
+      }
+    });
+
+    map.on('click', 'fleet-points', function(e) {
+      var props = e.features[0].properties;
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML('<b>' + props.id + '</b><br>Estado: ' + (props.online ? 'En Línea' : 'Fuera'))
+        .addTo(map);
+    });
+    map.on('mouseenter', 'fleet-points', function() { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'fleet-points', function() { map.getCanvas().style.cursor = ''; });
+
+    loadPositions();
+    setInterval(loadPositions, 5000);
+  });
+
+  async function loadPositions() {
+    try {
+      var res = await fetch('/api/posiciones/latest');
+      if (!res.ok) throw new Error('HTTP Status ' + res.status);
+      
+      var data = await res.json();
+      var arr = Array.isArray(data) ? data : (data.positions || data.devices || []);
+      
+      FLEET = arr.map(function(p) {
+        var lat = Number(p.lat || p.latitude);
+        var lon = Number(p.lon || p.lng || p.longitude);
+        var id = p.nombre || p.dispositivo_id || p.device || p.id || 'SIN-ID';
+        
+        // Lógica de 24 horas para determinar si está en línea
+        var ts = p.timestamp ? new Date(p.timestamp).getTime() : 0;
+        var isRecent = ts > 0 && (new Date().getTime() - ts) < (24 * 60 * 60 * 1000); 
+        return { id: id, lat: lat, lon: lon, online: isRecent || p.online === true };
+      }).filter(function(u) { return !isNaN(u.lat) && !isNaN(u.lon); });
+
+      var geojson = {
+        type: 'FeatureCollection',
+        features: FLEET.map(function(u) {
+          return {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [u.lon, u.lat] },
+            properties: { id: u.id, online: u.online }
+          };
+        })
+      };
+      map.getSource('fleet').setData(geojson);
+
+      var onCount = FLEET.filter(function(u) { return u.online; }).length;
+      document.getElementById('total').textContent = FLEET.length;
+      document.getElementById('online').textContent = onCount;
+      
+      var listEl = document.getElementById('list');
+      listEl.innerHTML = '';
+      FLEET.forEach(function(u) {
+        var d = document.createElement('div');
+        d.className = 'item' + (u.online ? ' online' : '');
+        d.innerHTML = '<b>' + u.id + '</b><small>' + u.lat.toFixed(4) + ', ' + u.lon.toFixed(4) + '</small>';
+        d.onclick = function() { map.flyTo({ center: [u.lon, u.lat], zoom: 12 }); };
+        listEl.appendChild(d);
+      });
+
+      document.getElementById('status').textContent = 'EN VIVO';
+      document.getElementById('status').style.color = '#00FF88';
+    } catch (e) {
+      console.error('Error cargando API:', e);
+      document.getElementById('status').textContent = 'ERROR API';
+      document.getElementById('status').style.color = '#FF3D3D';
+    }
+  }
+</script>
+</body>
+</html>

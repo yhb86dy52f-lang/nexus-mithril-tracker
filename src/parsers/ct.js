@@ -58,7 +58,8 @@ function parseCTFrame(cleanHexStr) {
   else if (cFFFF >= 2) { estado = 'OK DESHABILITADO'; }
   else { estado = 'BUENO PERFECTO'; }
 
-  return { 
+  return {
+    family: 'CT', 
     tempC1: tempC1, 
     tempC2: tempC2, 
     voltU: voltU, 

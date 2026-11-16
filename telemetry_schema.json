@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://runeforge.local/telemetry_schema.json",
+  "type": "object",
+  "required": ["family", "telemetry"],
+  "properties": {
+    "family": { "type": "string", "enum": ["CT", "KW", "R0"] },
+    "esn": { "type": ["string", "null"] },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "gps": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lon": { "type": "number" },
+            "fix": { "type": "string" }
+          },
+          "additionalProperties": true
+        },
+        "ct_data": {
+          "type": "object",
+          "properties": {
+            "payload": { "type": "string" },
+            "estado": { "type": "string" },
+            "c3E70": { "type": "number" }
+          },
+          "additionalProperties": true
+        },
+        "kw_data": {
+          "type": "object",
+          "properties": {
+            "rssi": { "type": "number" },
+            "lev0": { "type": "number" },
+            "lev1": { "type": "number" },
+            "temp0": { "type": "number" },
+            "temp1": { "type": "number" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
