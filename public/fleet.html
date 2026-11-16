@@ -1,1451 +1,322 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>NEXUS-MITHRIL — Dashboard Personal</title>
+  <title>NEXUS-MITHRIL // Centro de Mando</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0B0B12">
+  <meta name="theme-color" content="#05030A">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0B0B12;
-      --bg2: #11111C;
-      --panel: #141422;
-      --panel2: #1A1A2B;
-      --line: #23233A;
-      --line2: #2E2E4A;
-      --txt: #F2F2F7;
-      --muted: #9A9AB0;
-      --muted2: #6B6B85;
-      --purple: #A855F7;
-      --purple2: #7C3AED;
-      --cyan: #22D3EE;
-      --green: #22C55E;
-      --green2: #16A34A;
-      --red: #F43F5E;
-      --amber: #F59E0B;
-      --blue: #3B82F6;
-      --r: 12px;
-      --r2: 10px;
-      --r3: 8px;
-      --shadow: 0 10px 30px rgba(0, 0, 0, .45);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
-    }
-
-    html,
-    body {
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--txt);
-      font-family: Inter, system-ui, sans-serif;
-      -webkit-font-smoothing: antialiased
-    }
-
-    button,
-    input {
-      font-family: inherit
-    }
-
-    a {
-      color: inherit
-    }
-
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      width: 100vw
-    }
-
-    .header {
-      height: 64px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 0 18px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--line);
-      z-index: 2000;
-      overflow: hidden
-    }
-
-    .nav {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none
-    }
-
-    .nav::-webkit-scrollbar {
-      display: none
-    }
-
-    .brand {
-      flex-shrink: 0
-    }
-
-    .brand-txt {
-      white-space: nowrap
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0
-    }
-
-    .logo {
-      width: 36px;
-      height: 36px;
-      border-radius: 9px;
-      background: linear-gradient(135deg, #A855F7, #7C3AED);
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 18px;
-      letter-spacing: .5px;
-      flex-shrink: 0
-    }
-
-    .brand-txt {
-      line-height: 1.1;
-      min-width: 0
-    }
-
-    .brand-txt b {
-      font-size: 15px;
-      letter-spacing: .08em;
-      font-weight: 800
-    }
-
-    .brand-txt span {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: .14em;
-      font-weight: 600;
-      margin-top: 2px
-    }
-
-    .nav {
-      display: flex;
-      gap: 8px
-    }
-
-    .nav-btn {
-      height: 34px;
-      padding: 0 14px;
-      border: 1px solid var(--line2);
-      background: #171728;
-      color: var(--muted);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer
-    }
-
-    .nav-btn.active {
-      background: var(--txt);
-      color: #111;
-      border-color: var(--txt)
-    }
-
-    .btn-danger {
-      height: 34px;
-      padding: 0 14px;
-      border: 1px solid #3A1A22;
-      background: #1F1216;
-      color: #FDA4AF;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer
-    }
-
-    .head-right {
-      display: flex;
-      align-items: center;
-      gap: 14px
-    }
-
-    .status-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #12261A;
-      border: 1px solid #1E3A28;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #86EFAC
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, .18);
-      animation: pulse 1.8s infinite
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: .45
-      }
-    }
-
-    .clock {
-      font-family: "JetBrains Mono", monospace;
-      font-size: 12px;
-      color: var(--muted);
-      text-align: right;
-      line-height: 1.3
-    }
-
-    .clock b {
-      color: var(--txt);
-      font-size: 13px
-    }
-
-    #api-status {
-      font-family: "JetBrains Mono", monospace;
-      font-size: 11px;
-      color: var(--green);
-      font-weight: 700
-    }
-
-    .main {
-      flex: 1;
-      display: flex;
-      min-height: 0;
-      position: relative
-    }
-
-    .sidebar {
-      width: 340px;
-      flex-shrink: 0;
-      background: var(--panel);
-      border-right: 1px solid var(--line);
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      z-index: 1500
-    }
-
-    .side-head {
-      padding: 14px 14px 10px;
-      border-bottom: 1px solid var(--line)
-    }
-
-    .side-head-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center
-    }
-
-    .side-head-top h2 {
-      font-size: 11px;
-      letter-spacing: .14em;
-      color: var(--muted);
-      font-weight: 700
-    }
-
-    .side-head-top strong {
-      font-size: 11px;
-      color: var(--green)
-    }
-
-    .kpis {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-top: 12px
-    }
-
-    .kpi {
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      border-radius: var(--r2);
-      padding: 10px
-    }
-
-    .kpi label {
-      font-size: 10px;
-      letter-spacing: .12em;
-      color: var(--muted);
-      font-weight: 700
-    }
-
-    .kpi b {
-      display: block;
-      font-size: 20px;
-      margin-top: 4px;
-      line-height: 1
-    }
-
-    .kpi span {
-      font-size: 11px;
-      color: var(--muted)
-    }
-
-    .kpi.green b {
-      color: var(--green)
-    }
-
-    .kpi.amber b {
-      color: var(--amber)
-    }
-
-    .kpi.purple b {
-      color: #C4B5FD
-    }
-
-    .search {
-      margin: 12px 14px 0;
-      position: relative
-    }
-
-    .search input {
-      width: 100%;
-      height: 38px;
-      background: var(--bg2);
-      border: 1px solid var(--line2);
-      color: var(--txt);
-      border-radius: 10px;
-      padding: 0 36px 0 36px;
-      font-size: 13px;
-      outline: none
-    }
-
-    .search input::placeholder {
-      color: var(--muted2)
-    }
-
-    .search input:focus {
-      border-color: var(--purple)
-    }
-
-    .search svg {
-      position: absolute;
-      left: 11px;
-      top: 11px;
-      opacity: .6
-    }
-
-    .search button {
-      position: absolute;
-      right: 8px;
-      top: 7px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: none;
-      background: #2A2A3F;
-      color: #fff;
-      cursor: pointer;
-      font-size: 12px;
-      display: none
-    }
-
-    .filters {
-      display: flex;
-      gap: 6px;
-      padding: 12px 14px 10px;
-      flex-wrap: wrap
-    }
-
-    .filter-btn {
-      height: 30px;
-      padding: 0 12px;
-      border-radius: 999px;
-      border: 1px solid var(--line2);
-      background: transparent;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: .04em
-    }
-
-    .filter-btn.active {
-      background: var(--txt);
-      color: #111;
-      border-color: var(--txt)
-    }
-
-    .filter-btn small {
-      opacity: .7;
-      font-weight: 600
-    }
-
-    #device-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px 12px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px
-    }
-
-    .empty {
-      padding: 22px 12px;
-      text-align: center;
-      border: 1px dashed var(--line2);
-      border-radius: var(--r);
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6
-    }
-
-    .device-item {
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: 12px;
-      cursor: pointer;
-      transition: .15s
-    }
-
-    .device-item:hover {
-      border-color: #3B3B5C;
-      transform: translateY(-1px)
-    }
-
-    .device-item.active {
-      border-color: var(--purple);
-      background: #1B1426;
-      box-shadow: 0 0 0 1px var(--purple) inset
-    }
-
-    .dev-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px
-    }
-
-    .dev-name {
-      font-weight: 700;
-      font-size: 13.5px;
-      line-height: 1.2;
-      word-break: break-word
-    }
-
-    .dev-name small {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 500;
-      margin-top: 2px;
-      font-family: "JetBrains Mono", monospace
-    }
-
-    .badge {
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      padding: 4px 7px;
-      border-radius: 999px;
-      white-space: nowrap
-    }
-
-    .badge.on {
-      background: #12261A;
-      color: #86EFAC;
-      border: 1px solid #1E3A28
-    }
-
-    .badge.off {
-      background: #2A1216;
-      color: #FDA4AF;
-      border: 1px solid #3A1A22
-    }
-
-    .dev-coords {
-      display: flex;
-      gap: 14px;
-      margin-top: 10px;
-      font-family: "JetBrains Mono", monospace;
-      font-size: 11px;
-      color: #A5F3FC
-    }
-
-    .dev-coords span {
-      color: var(--muted);
-      font-family: Inter, sans-serif;
-      font-size: 10px;
-      letter-spacing: .08em;
-      display: block;
-      margin-bottom: 2px
-    }
-
-    .dev-stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--line);
-      font-size: 11px;
-      color: var(--muted)
-    }
-
-    .dev-stats b {
-      color: var(--txt)
-    }
-
-    .map-wrap {
-      flex: 1;
-      position: relative;
-      background: #05030A;
-      min-width: 0
-    }
-
-    #map {
-      width: 100%;
-      height: 100%
-    }
-
+      --void: #05030A; --glass: rgba(20, 15, 30, 0.65); --glass-border: rgba(168, 85, 247, 0.25);
+      --txt: #F8FAFC; --muted: #94A3B8; --neon-purple: #A855F7; --neon-cyan: #22D3EE;
+      --neon-green: #22C55E; --neon-red: #F43F5E; --neon-amber: #F59E0B;
+      --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100vh; width: 100vw; overflow: hidden; background: var(--void); color: var(--txt); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* HEADER */
+    .header { height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: linear-gradient(180deg, rgba(15,10,25,0.9) 0%, rgba(5,3,10,0.8) 100%); border-bottom: 1px solid var(--glass-border); backdrop-filter: blur(12px); z-index: 2000; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 38px; height: 38px; border-radius: 10px; background: url('/anduril-icono.jpg') center/cover, linear-gradient(135deg, var(--neon-purple), var(--neon-cyan)); box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); border: 1px solid rgba(255,255,255,0.2); }
+    .brand-txt b { font-size: 16px; letter-spacing: 0.1em; background: linear-gradient(90deg, #fff, var(--neon-cyan)); -webkit-background-clip: text; color: transparent; }
+    .brand-txt span { display: block; font-size: 10px; color: var(--neon-purple); letter-spacing: 0.2em; font-weight: 700; margin-top: 2px; }
+    .nav { display: flex; gap: 8px; }
+    .nav-btn { height: 34px; padding: 0 16px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--muted); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+    .nav-btn:hover, .nav-btn.active { background: rgba(168, 85, 247, 0.15); color: #fff; border-color: var(--neon-purple); box-shadow: 0 0 12px rgba(168, 85, 247, 0.3); }
+    .head-right { display: flex; align-items: center; gap: 16px; }
+    .status-pill { display: flex; align-items: center; gap: 8px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; color: #86EFAC; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); animation: pulse-dot 1.5s infinite; }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+    .clock { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--neon-cyan); text-align: right; }
+
+    /* MAIN */
+    .main { flex: 1; display: flex; min-height: 0; position: relative; }
+    .sidebar { width: 340px; flex-shrink: 0; background: var(--glass); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; backdrop-filter: blur(16px); z-index: 1500; }
+    .side-head { padding: 18px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .side-head-top h2 { font-size: 11px; letter-spacing: 0.15em; color: var(--muted); }
+    .side-head-top strong { color: var(--neon-green); float: right; text-shadow: 0 0 8px rgba(34,197,94,0.5); }
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+    .kpi { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; }
+    .kpi label { font-size: 9px; letter-spacing: 0.1em; color: var(--muted); font-weight: 800; }
+    .kpi b { display: block; font-size: 22px; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+    .kpi.purple b { color: var(--neon-purple); } .kpi.green b { color: var(--neon-green); } .kpi.amber b { color: var(--neon-amber); }
     
-
-    .leaflet-div-icon {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important
-    }
-
-    .map-toolbar {
-      position: absolute;
-      top: 14px;
-      left: 14px;
-      z-index: 1000;
-      display: flex;
-      gap: 8px
-    }
-
-    .tool-btn {
-      height: 36px;
-      padding: 0 12px;
-      background: #11111C;
-      border: 1px solid var(--line2);
-      color: var(--txt);
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      box-shadow: var(--shadow)
-    }
-
-    .map-legend {
-      position: absolute;
-      left: 14px;
-      bottom: 14px;
-      z-index: 1000;
-      background: rgba(17, 17, 28, .92);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      gap: 14px;
-      backdrop-filter: blur(6px)
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%
-    }
-
-    .map-attrib {
-      position: absolute;
-      right: 14px;
-      bottom: 14px;
-      z-index: 1000;
-      background: rgba(17, 17, 28, .9);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 11px;
-      color: var(--muted)
-    }
-
-    .info-panel {
-      width: 360px;
-      flex-shrink: 0;
-      background: var(--panel);
-      border-left: 1px solid var(--line);
-      display: none;
-      flex-direction: column;
-      min-height: 0;
-      z-index: 1800
-    }
-
-    .info-panel.open {
-      display: flex
-    }
-
-    .info-head {
-      padding: 16px 16px 12px;
-      border-bottom: 1px solid var(--line)
-    }
-
-    .info-head-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px
-    }
-
-    .info-head-top h3 {
-      font-size: 17px;
-      line-height: 1.15;
-      word-break: break-word
-    }
-
-    .info-head-top p {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 4px;
-      font-family: "JetBrains Mono", monospace
-    }
-
-    .close-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--line2);
-      background: var(--bg2);
-      color: var(--txt);
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-      flex-shrink: 0
-    }
-
-    .info-status {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      flex-wrap: wrap
-    }
-
-    .pill {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 6px 9px;
-      border-radius: 999px;
-      border: 1px solid var(--line2)
-    }
-
-    .pill.on {
-      background: #12261A;
-      color: #86EFAC;
-      border-color: #1E3A28
-    }
-
-    .pill.off {
-      background: #2A1216;
-      color: #FDA4AF;
-      border-color: #3A1A22
-    }
-
-    .pill.neutral {
-      background: var(--bg2);
-      color: var(--muted)
-    }
-
-    .info-content {
-      padding: 14px;
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px
-    }
-
-    .section-label {
-      font-size: 10px;
-      letter-spacing: .14em;
-      color: var(--muted);
-      font-weight: 700
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px
-    }
-
-    .stat-box {
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      border-radius: var(--r2);
-      padding: 11px
-    }
-
-    .stat-box label {
-      font-size: 10px;
-      letter-spacing: .1em;
-      color: var(--muted);
-      font-weight: 700
-    }
-
-    .stat-box b {
-      display: block;
-      font-size: 16px;
-      margin-top: 5px;
-      font-family: "JetBrains Mono", monospace
-    }
-
-    .stat-box span {
-      font-size: 11px;
-      color: var(--muted)
-    }
-
-    .stat-box.full {
-      grid-column: 1 / -1
-    }
-
-    .stat-box.cyan b {
-      color: #A5F3FC
-    }
-
-    .stat-box.green b {
-      color: #86EFAC
-    }
-
-    .stat-box.amber b {
-      color: #FCD34D
-    }
-
-    .btn-action {
-      width: 100%;
-      height: 42px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: .04em;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px
-    }
-
-    .btn-primary {
-      background: var(--txt);
-      color: #111;
-      border: 1px solid var(--txt)
-    }
-
-    .btn-primary:hover {
-      opacity: .92
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--txt);
-      border: 1px solid var(--line2)
-    }
-
-    .btn-alert {
-      background: #2A1216;
-      color: #FDA4AF;
-      border: 1px solid #3A1A22
-    }
-
-    .btn-action:disabled {
-      opacity: .6;
-      cursor: not-allowed
-    }
-
-    .note {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.6;
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px 11px
-    }
-
-    .timeline {
-      border-left: 1px solid var(--line2);
-      margin-left: 6px;
-      padding-left: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px
-    }
-
-    .timeline-item {
-      position: relative;
-      font-size: 12px;
-      line-height: 1.5
-    }
-
-    .timeline-item::before {
-      content: "";
-      position: absolute;
-      left: -19px;
-      top: 4px;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--purple);
-      border: 2px solid var(--bg)
-    }
-
-    .timeline-item b {
-      display: block;
-      font-size: 12px
-    }
-
-    .timeline-item span {
-      color: var(--muted);
-      font-size: 11px
-    }
-
-    #alert-container {
-      position: absolute;
-      top: 14px;
-      right: 374px;
-      z-index: 2500;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      pointer-events: none;
-      max-width: 320px
-    }
-
-    .alert-box {
-      background: #FFF1F2;
-      border: 1px solid #FECDD3;
-      color: #881337;
-      padding: 12px 13px;
-      border-radius: 12px;
-      font-size: 12px;
-      line-height: 1.5;
-      box-shadow: var(--shadow);
-      pointer-events: auto
-    }
-
-    .alert-box b {
-      font-size: 11px;
-      letter-spacing: .08em
-    }
-
-    .alert-box.success {
-      background: #F0FDF4;
-      border-color: #BBF7D0;
-      color: #14532D
-    }
-
-    .timeslider {
-      height: 68px;
-      flex-shrink: 0;
-      background: var(--bg2);
-      border-top: 1px solid var(--line);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 14px;
-      z-index: 2000
-    }
-
-    .ts-btn {
-      height: 36px;
-      min-width: 72px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: none;
-      background: var(--txt);
-      color: #111;
-      font-weight: 800;
-      font-size: 12px;
-      cursor: pointer
-    }
-
-    .ts-btn.secondary {
-      background: #22223A;
-      color: var(--txt);
-      border: 1px solid var(--line2)
-    }
-
-    #ts-range {
-      flex: 1;
-      accent-color: var(--purple);
-      height: 6px;
-      cursor: pointer
-    }
-
-    #ts-info {
-      font-family: "JetBrains Mono", monospace;
-      font-size: 11px;
-      color: #A5F3FC;
-      min-width: 280px;
-      text-align: right;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis
-    }
-
-    .ts-live {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      color: var(--green);
-      border: 1px solid #1E3A28;
-      background: #12261A;
-      padding: 6px 9px;
-      border-radius: 999px
-    }
-
-    #config-view {
-      display: none;
-      flex: 1;
-      background: var(--bg);
-      overflow: auto;
-      padding: 40px;
-    }
-
-    .config-panel {
-      max-width: 600px;
-      margin: 0 auto;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: var(--shadow);
-    }
-
-    .config-panel input {
-      width: 100%;
-      padding: 12px;
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      color: white;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      outline: none;
-    }
-
-    @media(max-width:900px) {
-      .sidebar {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        transform: translateX(-105%);
-        transition: .25s;
-        box-shadow: var(--shadow)
-      }
-
-      .sidebar.open {
-        transform: translateX(0)
-      }
-
-      .info-panel {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 92vw;
-        max-width: 360px
-      }
-
-      .clock {
-        display: none
-      }
-
-      #ts-info {
-        display: none
-      }
-
-      .brand-txt span {
-        display: none
-      }
-
-      #alert-container {
-        right: 14px;
-        top: 76px
-      }
-    }
-
-    #fleet-grid-view {
-      display: none;
-      flex: 1;
-      background: var(--bg);
-      overflow: auto;
-      padding: 20px;
-      flex-direction: column;
-    }
-
-    #fleet-grid-view.active {
-      display: flex;
-    }
-
-    .fleet-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    .fleet-table th {
-      background: var(--bg2);
-      color: var(--muted);
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 11px;
-      letter-spacing: .5px;
-      border-bottom: 1px solid var(--line);
-      position: sticky;
-      top: 0;
-    }
-
-    .fleet-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--line);
-      color: var(--txt);
-      font-family: "JetBrains Mono", monospace;
-    }
-
-    .fleet-table tr:hover td {
-      background: rgba(168, 85, 247, .06);
-    }
-
-    .btn-row {
-      padding: 6px 12px;
-      background: var(--bg2);
-      border: 1px solid var(--line2);
-      color: var(--txt);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .btn-row:hover {
-      border-color: var(--purple);
-      color: var(--purple);
-    }
-  
-    /* UPGRADE VISUAL v3 - sin romper IDs ni flujo */
-    .header { background: linear-gradient(180deg, #12121F 0%, #0F0F1A 100%); box-shadow: 0 1px 0 rgba(168,85,247,.18), 0 10px 30px rgba(0,0,0,.25); }
-    .brand-txt b { background: linear-gradient(90deg, #F2F2F7, #C4B5FD); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .status-pill { box-shadow: 0 0 0 1px rgba(34,197,94,.25), 0 4px 14px rgba(34,197,94,.12); }
-    .kpi { transition: transform .15s ease, border-color .15s ease; }
-    .kpi:hover { transform: translateY(-1px); border-color: #3A3A5A; }
-    .fleet-table thead th { position: sticky; top: 0; background: #1A1A2B; z-index: 1; }
-    .fleet-table tbody tr { transition: background .12s ease; }
-    .fleet-table tbody tr:hover { background: rgba(168,85,247,.08); }
-    .export-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; background: linear-gradient(90deg, rgba(168,85,247,.14), rgba(34,211,238,.10)); border:1px solid rgba(168,85,247,.35); border-radius: 999px; padding: 6px 6px 6px 12px; }
-    .export-bar-label { font-size:10px; letter-spacing:.14em; font-weight:800; color:#C4B5FD; white-space:nowrap; }
-    #export-format { height:34px; background:#0F0F1A; color:var(--txt); border:1px solid var(--line2); border-radius:999px; padding:0 10px; font-size:12px; font-weight:700; cursor:pointer; outline:none; }
-    #export-format:focus { border-color: var(--purple); }
-    #export-status { font-size:11px; font-weight:700; color:var(--muted); min-width: 90px; }
-    #export-status.ok { color: var(--green); }
-    #export-status.err { color: var(--red); }
-    #export-status.busy { color: var(--amber); }
-    .btn-export-raw { height:34px; padding:0 14px; border:1px solid #1E3A28; background: linear-gradient(180deg, #22C55E, #16A34A); color:#04120A; border-radius:999px; font-size:12px; font-weight:800; cursor:pointer; box-shadow: 0 4px 14px rgba(34,197,94,.25); transition: transform .12s ease, opacity .12s ease; }
-    .btn-export-raw:hover { transform: translateY(-1px); opacity:.95; }
-    .btn-export-raw:disabled { opacity:.55; cursor:wait; transform:none; }
-    .btn-row { transition: transform .12s ease, border-color .12s ease; }
-    .btn-row:hover { transform: translateY(-1px); border-color:#3A3A5A; }
-    @media (max-width: 900px) { .export-bar { border-radius: 14px; padding: 8px; } }
-
-        /* MEJORA VISUAL V4 */
-    .pulse-marker {
-      animation: marker-pulse 2s infinite;
-    }
-    @keyframes marker-pulse {
-      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-    }
-    .leaflet-popup-content-wrapper {
-      background: rgba(17, 17, 28, 0.95);
-      color: #fff;
-      border: 1px solid #3B3B5C;
-      backdrop-filter: blur(4px);
-    }
-    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
-    /* MEJORA VISUAL V4 */
-    .pulse-marker {
-      animation: marker-pulse 2s infinite;
-    }
-    @keyframes marker-pulse {
-      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-    }
-    .leaflet-popup-content-wrapper {
-      background: rgba(17, 17, 28, 0.95);
-      color: #fff;
-      border: 1px solid #3B3B5C;
-      backdrop-filter: blur(4px);
-    }
-    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
-    /* EFECTO 3D Y LATIDO VIVO */
-    .pulse-marker {
-      border-radius: 50%;
-      animation: marker-pulse 2s infinite;
-    }
-    @keyframes marker-pulse {
-      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
-      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-    }
-    /* Estilo de los globos de información (Popups) */
-    .leaflet-popup-content-wrapper {
-      background: rgba(17, 17, 28, 0.95);
-      color: #fff;
-      border: 1px solid #3B3B5C;
-      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
-    }
-    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
-    /* EFECTO 3D Y LATIDO VIVO */
-    .pulse-marker {
-      animation: marker-pulse 2s infinite;
-    }
-    @keyframes marker-pulse {
-      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
-      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-    }
-    .leaflet-popup-content-wrapper {
-      background: rgba(17, 17, 28, 0.95);
-      color: #fff;
-      border: 1px solid #3B3B5C;
-      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
-    }
-    .leaflet-popup-tip { background: rgba(17, 17, 28, 0.95); }
+    .search { margin: 14px 16px 0; position: relative; }
+    .search input { width: 100%; height: 40px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: #fff; border-radius: 8px; padding: 0 12px 0 36px; font-size: 13px; outline: none; }
+    .search svg { position: absolute; left: 10px; top: 12px; stroke: var(--neon-cyan); }
+    .filters { display: flex; gap: 6px; padding: 12px 16px; }
+    .filter-btn { flex: 1; height: 32px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer; }
+    .filter-btn.active { background: var(--neon-purple); color: #fff; border-color: var(--neon-purple); }
     
-</style>
-    <style>
-      /* Filtro para hacer el mapa de OpenStreetMap oscuro */
-      .leaflet-tile-pane {
-        filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-      }
-    </style>
+    #device-list { flex: 1; overflow-y: auto; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .device-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+    .device-item:hover { background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.4); }
+    .device-item.active { background: rgba(168, 85, 247, 0.15); border-color: var(--neon-purple); }
+    .dev-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .dev-name { font-weight: 800; font-size: 14px; }
+    .dev-name small { display: block; font-size: 10px; color: var(--neon-cyan); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+    .badge { font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 6px; }
+    .badge.on { background: rgba(34,197,94,0.15); color: #86EFAC; border: 1px solid rgba(34,197,94,0.3); }
+    .badge.off { background: rgba(244,63,94,0.15); color: #FDA4AF; border: 1px solid rgba(244,63,94,0.3); }
+    .dev-coords { display: flex; justify-content: space-between; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+    .dev-stats { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 11px; color: var(--muted); }
+    
+    .map-wrap { flex: 1; position: relative; background: var(--void); }
+    #map { width: 100%; height: 100%; }
+    .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+    
+    .map-toolbar { position: absolute; top: 16px; left: 16px; z-index: 1000; display: flex; gap: 8px; }
+    .tool-btn { height: 36px; padding: 0 14px; background: var(--glass); border: 1px solid var(--glass-border); color: var(--txt); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; backdrop-filter: blur(8px); }
+    .tool-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+    .map-legend { position: absolute; left: 16px; bottom: 16px; z-index: 1000; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px 14px; font-size: 11px; color: var(--muted); display: flex; gap: 16px; backdrop-filter: blur(8px); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+
+    /* PANELES Y VISTAS */
+    .info-panel { width: 360px; flex-shrink: 0; background: var(--glass); border-left: 1px solid var(--glass-border); display: none; flex-direction: column; backdrop-filter: blur(20px); z-index: 1800; }
+    .info-panel.open { display: flex; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .info-head { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .info-head-top h3 { font-size: 18px; }
+    .info-head-top p { font-size: 11px; color: var(--neon-cyan); font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+    .close-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: #fff; cursor: pointer; }
+    .close-btn:hover { background: rgba(244,63,94,0.2); color: var(--neon-red); border-color: var(--neon-red); }
+    .info-content { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    .section-label { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); font-weight: 800; border-left: 2px solid var(--neon-purple); padding-left: 8px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; }
+    .stat-box label { font-size: 9px; letter-spacing: 0.1em; color: var(--muted); font-weight: 800; }
+    .stat-box b { display: block; font-size: 16px; margin-top: 6px; font-family: 'JetBrains Mono', monospace; color: #fff; }
+    .btn-action { width: 100%; height: 42px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+    .btn-primary { background: var(--neon-purple); color: #fff; border: none; box-shadow: 0 0 15px rgba(168,85,247,0.4); }
+    .btn-primary:hover { background: #9333EA; transform: translateY(-2px); }
+    
+    /* CONFIG VIEW y FLEET GRID */
+    #config-view, #fleet-grid-view { display: none; flex: 1; background: var(--void); overflow: auto; padding: 30px; }
+    .config-panel { max-width: 600px; margin: 0 auto; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; padding: 30px; backdrop-filter: blur(20px); }
+    .config-panel input { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 8px; margin-bottom: 16px; outline: none; }
+    .fleet-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--glass); backdrop-filter: blur(10px); }
+    .fleet-table th { background: rgba(0,0,0,0.5); color: var(--neon-cyan); padding: 12px 16px; text-align: left; font-size: 11px; border-bottom: 1px solid var(--glass-border); }
+    .fleet-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .fleet-table tr:hover td { background: rgba(168, 85, 247, 0.1); }
+    
+    .export-bar { display: flex; gap: 8px; align-items: center; background: rgba(168,85,247,0.1); border: 1px solid var(--glass-border); border-radius: 8px; padding: 6px 12px; }
+    .export-bar select, .export-bar button { background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    .btn-export-raw { background: var(--neon-green) !important; color: #000 !important; font-weight: 800; border: none !important; }
+    
+    .timeslider { height: 70px; flex-shrink: 0; background: var(--glass); border-top: 1px solid var(--glass-border); display: flex; align-items: center; gap: 16px; padding: 0 20px; backdrop-filter: blur(10px); z-index: 2000; }
+    .ts-btn { height: 36px; padding: 0 20px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: #fff; font-weight: 800; cursor: pointer; }
+    #ts-range { flex: 1; accent-color: var(--neon-purple); cursor: pointer; }
+    
+    @media(max-width: 900px) {
+      .sidebar { position: absolute; height: 100%; transform: translateX(-105%); transition: 0.3s; }
+      .sidebar.open { transform: translateX(0); }
+      .info-panel { position: absolute; right: 0; height: 100%; width: 100%; max-width: 360px; }
+    }
+  </style>
 </head>
-
 <body>
   <div id="app">
     <header class="header">
       <div class="brand">
-        <div class="logo">AH</div>
-        <div class="brand-txt"><b>NEXUS-MITHRIL</b><span>TRACKER PERSONAL</span></div>
+        <div class="logo"></div>
+        <div class="brand-txt"><b>NEXUS-MITHRIL</b><span>OSIRIS PROTOCOL</span></div>
       </div>
-      <nav class="nav" aria-label="Vista">
-        <button class="nav-btn active" id="btn-map-view" onclick="showMapView()">MAPA</button>
-        <button class="nav-btn" id="btn-list-view" onclick="showFleetView()">FLOTA</button>
-        <button class="nav-btn" id="btn-config" onclick="showConfigView()">⚙️ CONFIG</button>
-        <button class="nav-btn" style="color:#FF2EA6; border-color:#FF2EA6;"
-          onclick="window.location.href='/diagnostico.html'">🔬 LABORATORIO</button>
-        <button class="nav-btn" id="btn-osiris-cctv" style="color:#22D3EE; border-color:#22D3EE;">CCTV TEXAS</button>
- <button class="btn-danger" id="btn-power" onclick="toggleSystemPower()">APAGAR</button></button>
+      <nav class="nav">
+        <button class="nav-btn active" id="btn-map-view" onclick="showMapView()">RADAR</button>
+        <button class="nav-btn" id="btn-fleet-view" onclick="showFleetView()">FLOTA</button>
+        <button class="nav-btn" onclick="showConfigView()">CONFIG</button>
+        <button class="nav-btn" onclick="window.location.href='/diagnostico.html'">LABORATORIO</button>
       </nav>
       <div class="head-right">
-        <div class="status-pill"><span class="dot"></span> <span id="api-status">EN LINEA</span></div>
+        <div class="status-pill"><span class="dot"></span> <span id="api-status">ONLINE</span></div>
         <div class="clock"><b id="clock-time">--:--:--</b><br><span id="clock-date">--</span></div>
       </div>
     </header>
 
     <div class="main">
+      <!-- SIDEBAR -->
       <aside class="sidebar" id="sidebar">
         <div class="side-head">
-          <div class="side-head-top">
-            <h2>FLOTA</h2><strong><span id="kpi-online">0</span> ACTIVOS</strong>
-          </div>
+          <div class="side-head-top"><h2>FLOTA ACTIVA</h2><strong><span id="kpi-online">0</span> EN LÍNEA</strong></div>
           <div class="kpis">
-            <div class="kpi purple"><label>TOTAL</label><b id="kpi-total">0</b><span>unidades</span></div>
-            <div class="kpi green"><label>EN LINEA</label><b id="kpi-online-2">0</b><span>ult. 15 min</span></div>
-            <div class="kpi amber"><label>FUERA</label><b id="kpi-offline">0</b><span>sin senal</span></div>
+            <div class="kpi purple"><label>TOTAL</label><b id="kpi-total">0</b></div>
+            <div class="kpi green"><label>ACTIVOS</label><b id="kpi-online-2">0</b></div>
+            <div class="kpi amber"><label>FUERA</label><b id="kpi-offline">0</b></div>
           </div>
         </div>
         <div class="search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           <input id="search-input" placeholder="Buscar unidad..." oninput="filterList()" autocomplete="off">
-          <button id="search-clear" onclick="clearSearch()" title="Limpiar busqueda">X</button>
         </div>
-        <div class="filters" role="tablist" aria-label="Filtrar por fuente">
-          <button class="filter-btn active" data-filter="all" onclick="setSourceFilter('all', event)">TODOS <small
-              id="count-all">0</small></button>
-          <button class="filter-btn" data-filter="sms" onclick="setSourceFilter('sms', event)">SMS <small
-              id="count-sms">0</small></button>
-          <button class="filter-btn" data-filter="hubble" onclick="setSourceFilter('hubble', event)">HUBBLE <small
-              id="count-hubble">0</small></button>
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all" onclick="setSourceFilter('all', event)">TODOS</button>
+          <button class="filter-btn" data-filter="sms" onclick="setSourceFilter('sms', event)">SMS</button>
+          <button class="filter-btn" data-filter="hubble" onclick="setSourceFilter('hubble', event)">HUBBLE</button>
         </div>
-        <div id="device-list" aria-live="polite"></div>
-        <!-- Fase 1: plantilla de tarjeta. Los datos entran por textContent, nunca por concatenación -->
+        <div id="device-list"></div>
         <template id="tpl-device">
           <article class="device-item" data-id="">
             <div class="dev-top">
-              <div>
-                <div class="dev-name"><span data-field="name"></span><small data-field="idline"></small></div>
-              </div><span class="badge" data-field="badge"></span>
+              <div class="dev-name"><span data-field="name"></span><small data-field="idline"></small></div>
+              <span class="badge" data-field="badge"></span>
             </div>
             <div class="dev-coords">
-              <div><span>LATITUD</span><span data-field="lat"></span></div>
-              <div><span>LONGITUD</span><span data-field="lon"></span></div>
+              <div><span>LAT</span><span data-field="lat"></span></div>
+              <div><span>LON</span><span data-field="lon"></span></div>
               <div><span>RSSI</span><span data-field="rssi"></span></div>
             </div>
-            <div class="dev-stats"><span>Vel: <b data-field="vel"></b></span><span>Temp: <b
-                  data-field="temp"></b></span><span data-field="ago"></span></div>
+            <div class="dev-stats"><span>VEL: <b data-field="vel"></b></span><span data-field="ago"></span></div>
           </article>
         </template>
       </aside>
 
+      <!-- MAP VIEW -->
       <section class="map-wrap" id="map-view">
         <div id="map"></div>
         <div class="map-toolbar">
-          <button class="tool-btn" onclick="centerOnFleet()">Centrar flota</button>
-          <button class="tool-btn" onclick="toggleSidebarMobile()">Ver lista</button>
-          <button class="tool-btn" onclick="loadPositions()">Actualizar</button>
+          <button class="tool-btn" onclick="centerOnFleet()">CENTRAR FLOTA</button>
+          <button class="tool-btn" onclick="loadPositions()">ACTUALIZAR</button>
         </div>
         <div class="map-legend">
-          <span class="legend-item"><span class="legend-dot" style="background:#22C55E"></span> En linea</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span> Fuera de linea</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#A855F7"></span> Seleccionado</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--neon-green); color:var(--neon-green)"></span> EN LÍNEA</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--muted); color:var(--muted)"></span> FUERA</span>
         </div>
-        <div class="map-attrib" id="map-attrib">NEXUS-MITHRIL &middot; Mapa en vivo</div>
         <div id="alert-container"></div>
       </section>
 
-      <aside class="info-panel" id="info-panel" aria-label="Detalle de unidad">
+      <!-- INFO PANEL -->
+      <aside class="info-panel" id="info-panel">
         <div class="info-head">
           <div class="info-head-top">
-            <div>
-              <h3 id="info-title">Selecciona una unidad</h3>
-              <p id="info-subtitle">Sin seleccion</p>
-            </div>
-            <button class="close-btn" onclick="closePanel()" aria-label="Cerrar panel">X</button>
-          </div>
-          <div class="info-status" id="info-status">
-            <span class="pill neutral">SIN DATOS</span>
+            <div><h3 id="info-title">Selecciona una unidad</h3><p id="info-subtitle">Sin selección</p></div>
+            <button class="close-btn" onclick="closePanel()">X</button>
           </div>
         </div>
-        <div class="info-content" id="info-data">
-          <div class="note">Selecciona una unidad en la lista o en el mapa para ver su estado, coordenadas y acciones.
-          </div>
-        </div>
+        <div class="info-content" id="info-data"></div>
       </aside>
 
-      <!-- VISTA DE CONFIGURACIÓN -->
+      <!-- FLEET GRID VIEW -->
+      <div id="fleet-grid-view">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2 style="font-size:20px; color:var(--neon-cyan)">FLOTA // TODOS LOS DISPOSITIVOS</h2>
+          <div class="export-bar">
+            <span style="font-size:11px; font-weight:800; color:#C4B5FD">EXPORTAR</span>
+            <select id="export-format">
+              <option value="csv">RAW • CSV</option>
+              <option value="json">RAW • JSON</option>
+              <option value="txt">RAW • TXT</option>
+            </select>
+            <button class="btn-export-raw" id="btn-export-raw" onclick="exportarRaw()">⤓ Exportar Raw</button>
+            <button onclick="renderFleetTable()" style="border-color:var(--neon-purple)">↻ Actualizar</button>
+          </div>
+        </div>
+        <table class="fleet-table">
+          <thead>
+            <tr>
+              <th>Estado</th><th>Dispositivo</th><th>Fuente</th><th>Lat / Lon</th>
+              <th>Velocidad</th><th>Voltaje</th><th>Sensores</th><th>Última Act.</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="fleet-grid-body"></tbody>
+        </table>
+      </div>
+
+      <!-- CONFIG VIEW -->
       <div id="config-view">
         <div class="config-panel">
-          <h2 style="margin-top:0; font-size: 24px; color: var(--cyan);">⚙️ Configuración de Hubble Network</h2>
-          <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">Ingresa tus credenciales para conectar
-            con la API de Hubble y registrar automáticamente el Webhook.</p>
+          <h2 style="margin-top:0; font-size: 24px; color: var(--neon-cyan);">⚙️ Configuración de Hubble Network</h2>
+          <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">Ingresa tus credenciales para conectar con la API de Hubble y registrar automáticamente el Webhook.</p>
           <div style="margin-bottom: 16px;">
-            <label style="display:block; font-size: 12px; color: var(--muted); margin-bottom: 8px;">HUBBLE API
-              KEY</label>
+            <label style="display:block; font-size: 12px; color: var(--muted); margin-bottom: 8px;">HUBBLE API KEY</label>
             <input type="password" id="cfg-api-key" placeholder="Pega tu API Key aquí...">
           </div>
           <div style="margin-bottom: 24px;">
             <label style="display:block; font-size: 12px; color: var(--muted); margin-bottom: 8px;">ORG ID</label>
             <input type="text" id="cfg-org-id" placeholder="2d3cab0a-...">
           </div>
-          <button class="btn-action btn-primary" style="margin-bottom: 16px;" onclick="saveHubbleConfig()">💾 Guardar
-            Credenciales</button>
-          <div style="border-top: 1px solid var(--line); padding-top: 24px; margin-top: 24px;">
-            <h3 style="font-size: 16px; color: var(--green); margin-top: 0;">Auto-Registro de Webhook</h3>
-            <button class="btn-action btn-primary"
-              style="background:var(--green); border-color:var(--green); color:#000; margin-top:16px;"
-              onclick="registerHubbleWebhook()">🚀 Levantar Webhook Automáticamente</button>
+          <button class="btn-action btn-primary" style="margin-bottom: 16px;" onclick="saveHubbleConfig()">💾 Guardar Credenciales</button>
+          <div style="border-top: 1px solid var(--glass-border); padding-top: 24px; margin-top: 24px;">
+            <h3 style="font-size: 16px; color: var(--neon-green); margin-top: 0;">Auto-Registro de Webhook</h3>
+            <button class="btn-action btn-primary" style="background:var(--neon-green); color:#000; margin-top:16px;" onclick="registerHubbleWebhook()">🚀 Levantar Webhook Automáticamente</button>
           </div>
-          <button class="btn-action btn-outline" style="margin-top: 24px;" onclick="showMapView()">⬅ Volver al
-            Radar</button>
-          <div id="config-status"
-            style="margin-top: 20px; font-size: 14px; font-family: monospace; text-align: center;"></div>
+          <button class="btn-action" style="background:transparent; border:1px solid var(--glass-border); color:#fff; margin-top: 24px;" onclick="showMapView()">⬅ Volver al Radar</button>
+          <div id="config-status" style="margin-top: 20px; font-size: 14px; font-family: monospace; text-align: center;"></div>
         </div>
-      </div>
-
-      <!-- VISTA DE FLOTA (DATA GRID) -->
-      <div id="fleet-grid-view">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h2 style="font-size:18px">FLOTA // TODOS LOS DISPOSITIVOS</h2>
-          <div class="export-bar">
-            <span class="export-bar-label">⬇ EXPORTAR</span>
-            <button class="btn-row" style="background:var(--purple);color:#fff;border-color:var(--purple)"
-              onclick="exportarCSV()">CSV vista</button>
-            <select id="export-format" aria-label="Formato Raw">
-              <option value="csv">RAW • CSV</option>
-              <option value="json">RAW • JSON</option>
-              <option value="txt">RAW • TXT</option>
-            </select>
-            <button class="btn-export-raw" id="btn-export-raw" onclick="exportarRaw()">⤓ Exportar Raw</button>
-            <span id="export-status"></span>
-            <button class="btn-row" onclick="loadPositions();renderFleetTable()">↻ Actualizar</button>
-          </div>
-        </div>
-        <table class="fleet-table">
-          <thead>
-            <tr>
-              <th>Estado</th>
-              <th>Dispositivo</th>
-              <th>Fuente</th>
-              <th>Latitud / Longitud</th>
-              <th>Velocidad</th>
-              <th>Voltaje</th>
-              <th>Sensores</th>
-              <th>Última Actualización</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="fleet-grid-body"></tbody>
-        </table>
       </div>
     </div>
 
-    <footer class="timeslider" id="time-slider-bar">
+    <!-- TIME SLIDER -->
+    <footer class="timeslider">
       <button class="ts-btn" id="ts-play" onclick="toggleTimePlay()">PLAY</button>
-      <input id="ts-range" type="range" min="0" max="0" value="0" aria-label="Linea de tiempo">
-      <span id="ts-info">Sin historial</span>
-      <button class="ts-btn secondary" id="ts-live" onclick="goLive()">LIVE</button>
+      <input id="ts-range" type="range" min="0" max="0" value="0">
+      <span id="ts-info" style="font-family:'JetBrains Mono'; font-size:11px; color:var(--neon-cyan); min-width:300px; text-align:right">Historial no cargado</span>
+      <button class="ts-btn" onclick="goLive()">LIVE</button>
     </footer>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const API = '';
-    // CORREGIDO v2: same-origin ya no necesita API key (server.js lo permite). No exponer key en frontend.
-    const HEADERS = {};
-
-    // FASE 1: un solo lugar para todos los fetch. Timeout + error uniforme + sin repetir headers.
     async function api(path, { method = 'GET', body, timeoutMs = 8000 } = {}) {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), timeoutMs);
       try {
-        const res = await fetch(path, {
-          method,
-          headers: body ? { 'Content-Type': 'application/json', ...HEADERS } : { ...HEADERS },
-          body: body ? JSON.stringify(body) : undefined,
-          cache: 'no-store',
-          signal: ctrl.signal
-        });
-        let data = null;
-        try { data = await res.json(); } catch (e) { /* respuesta sin JSON */ }
-        if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+        const res = await fetch(path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', signal: ctrl.signal });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
         return data;
-      } catch (e) {
-        if (e.name === 'AbortError') throw new Error('Timeout: el servidor no respondió en ' + timeoutMs + 'ms');
-        throw e;
       } finally { clearTimeout(timer); }
     }
-    // Bitácora local de acciones remotas (Fase 0). El backend debería persistirla en /api/bitacora.
-    function registrarAccion(accion, detalle) {
-      try {
-        const log = JSON.parse(localStorage.getItem('nexus-bitacora') || '[]');
-        log.push({ ts: new Date().toISOString(), accion, detalle });
-        localStorage.setItem('nexus-bitacora', JSON.stringify(log.slice(-200)));
-      } catch (e) { }
-      console.info('[BITACORA]', accion, detalle);
-    }
+
     let map, markers = {}, allPositions = [], filteredPositions = [];
     let currentSearch = '', currentSourceFilter = 'all', selectedId = null;
     let timeHistory = [], timeIdx = 0, timePlaying = false, timeTimer = null, timeMarker = null;
 
     function timeAgo(ts) {
       if (!ts) return 'SIN DATOS';
-      const now = Date.now(); const then = new Date(ts).getTime();
-      if (isNaN(then)) return 'FECHA INVÁLIDA';
-      const diffSecs = Math.floor((now - then) / 1000);
-      if (diffSecs < 0) return 'AHORA MISMO';
-      if (diffSecs < 60) return 'HACE ' + diffSecs + ' SEG';
-      const diffMins = Math.floor(diffSecs / 60);
-      if (diffMins < 60) return 'HACE ' + diffMins + ' MIN';
-      const diffHours = Math.floor(diffMins / 60);
-      if (diffHours < 24) return 'HACE ' + diffHours + ' HR';
-      return 'HACE ' + Math.floor(diffHours / 24) + ' DÍAS';
+      const diffSecs = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+      if (diffSecs < 60) return 'HACE ' + diffSecs + 'S';
+      if (diffSecs < 3600) return 'HACE ' + Math.floor(diffSecs/60) + 'M';
+      return 'HACE ' + Math.floor(diffSecs/3600) + 'H';
     }
 
     function tickClock() {
       const now = new Date();
-      const t = document.getElementById('clock-time'); const d = document.getElementById('clock-date');
-      if (t) t.textContent = now.toLocaleTimeString('es-MX', { hour12: false });
-      if (d) d.textContent = now.toLocaleDateString('es-MX', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      document.getElementById('clock-time').textContent = now.toLocaleTimeString('es-MX', { hour12: false });
+      document.getElementById('clock-date').textContent = now.toLocaleDateString('es-MX', { weekday: 'short', day: '2-digit', month: 'short' });
     }
     setInterval(tickClock, 1000); tickClock();
 
-        map = L.map('map', { zoomControl: false }).setView([23.6345, -102.5528], 5);
+    map = L.map('map', { zoomControl: false }).setView([23.6345, -102.5528], 5);
     window.NEXUS_MAP = map;
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
 
-    // Mapa Base: OpenStreetMap (El CSS oscuro se aplicará)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; Esri'
-    }).addTo(map);
-
-        function makeIcon(color, pulsing) {
-        return L.divIcon({
-            className: '',
-            html: '<div style="width:18px;height:18px;border-radius:50%;background-color:' + color + ';border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.8);"></div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
-        });
+    function makeIcon(state) {
+      let cls = 'custom-marker marker-offline';
+      if (state === 'online') cls = 'custom-marker marker-online';
+      if (state === 'selected') cls = 'custom-marker marker-selected';
+      return L.divIcon({ className: '', html: '<div class="'+cls+'" style="width:16px;height:16px;"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
     }
 
-    const onlineIcon = makeIcon('#22C55E', true);
-    const offlineIcon = makeIcon('#94A3B8', false);
-    const selectedIcon = makeIcon('#A855F7', true);
-
-    function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
     function isOnline(p) { try { return ((new Date() - new Date(p.timestamp)) / 1000 / 60) < 15; } catch (e) { return false; } }
     function fmtCoord(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(6) : '--'; }
 
     function setSourceFilter(f, evt) {
       currentSourceFilter = f;
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      const btn = evt ? evt.target.closest('.filter-btn') : document.querySelector('[data-filter="' + f + '"]');
-      if (btn) btn.classList.add('active');
+      if (evt) evt.target.classList.add('active');
       filterList();
     }
-    function clearSearch() { const i = document.getElementById('search-input'); i.value = ''; document.getElementById('search-clear').style.display = 'none'; filterList(); }
+    
     function filterList() {
-      const inp = document.getElementById('search-input');
-      currentSearch = inp.value.toLowerCase();
-      document.getElementById('search-clear').style.display = currentSearch ? 'block' : 'none';
+      currentSearch = document.getElementById('search-input').value.toLowerCase();
       filteredPositions = allPositions.filter(p => {
         const srcMatch = (currentSourceFilter === 'all') || ((p.fuente || 'sms').toLowerCase() === currentSourceFilter);
         const id = (p.dispositivo_id || p.mid || '').toLowerCase();
@@ -1453,65 +324,44 @@
         return srcMatch && (id.includes(currentSearch) || name.includes(currentSearch));
       });
       renderList(); updateMap();
+      if (document.getElementById('fleet-grid-view').style.display === 'block') renderFleetTable();
     }
+
+    function closePanel() { document.getElementById('info-panel').classList.remove('open'); selectedId = null; filterList(); }
     function toggleSidebarMobile() { document.getElementById('sidebar').classList.toggle('open'); }
-    function closePanel() { document.getElementById('info-panel').classList.remove('open'); selectedId = null; document.querySelectorAll('.device-item').forEach(el => el.classList.remove('active')); }
-    function apagarSistema() { if (confirm('Apagar el centro de mando?')) { showAlert('Sistema pausado.', true); } }
     function centerOnFleet() {
       if (!filteredPositions.length) return;
       const bounds = L.latLngBounds(filteredPositions.map(p => [Number(p.lat), Number(p.lon)]));
-      if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30] });
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50] });
     }
 
     function renderList() {
       const list = document.getElementById('device-list');
       const total = allPositions.length;
       const online = allPositions.filter(isOnline).length;
-      const offline = total - online;
       document.getElementById('kpi-total').textContent = total;
       document.getElementById('kpi-online').textContent = online;
       document.getElementById('kpi-online-2').textContent = online;
-      document.getElementById('kpi-offline').textContent = offline;
-      document.getElementById('count-all').textContent = total;
-      document.getElementById('count-sms').textContent = allPositions.filter(p => (p.fuente || 'sms').toLowerCase() === 'sms').length;
-      document.getElementById('count-hubble').textContent = allPositions.filter(p => (p.fuente || 'sms').toLowerCase() === 'hubble').length;
+      document.getElementById('kpi-offline').textContent = total - online;
 
       list.replaceChildren();
-      if (!filteredPositions.length) {
-        const empty = document.createElement('div');
-        empty.className = 'empty';
-        const b = document.createElement('b'); b.textContent = 'Sin unidades'; empty.appendChild(b);
-        empty.appendChild(document.createElement('br'));
-        empty.appendChild(document.createTextNode('Prueba con TODOS o limpia la busqueda.'));
-        empty.appendChild(document.createElement('br')); empty.appendChild(document.createElement('br'));
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn active'; btn.textContent = 'Ver todas';
-        btn.addEventListener('click', () => { setSourceFilter('all'); clearSearch(); });
-        empty.appendChild(btn);
-        list.appendChild(empty);
-        return;
-      }
       const tpl = document.getElementById('tpl-device');
       for (const p of filteredPositions) {
         const id = p.dispositivo_id || p.mid || '';
         const on = isOnline(p);
-        const vel = p.velocidad ?? p.speed ?? null;
-        const temp = p.temperatura ?? p.temp ?? null;
-        const rssi = p.rssi ?? null;
         const node = tpl.content.cloneNode(true);
         const card = node.querySelector('.device-item');
         card.dataset.id = id;
         if (selectedId === id) card.classList.add('active');
         card.querySelector('[data-field="name"]').textContent = p.nombre || id;
-        card.querySelector('[data-field="idline"]').textContent = 'ID: ' + id + ' · ' + String(p.fuente || 'sms').toUpperCase();
+        card.querySelector('[data-field="idline"]').textContent = id + ' · ' + String(p.fuente || 'sms').toUpperCase();
         const badge = card.querySelector('[data-field="badge"]');
         badge.classList.add(on ? 'on' : 'off');
-        badge.textContent = on ? 'EN LINEA' : 'FUERA';
+        badge.textContent = on ? 'EN LÍNEA' : 'FUERA';
         card.querySelector('[data-field="lat"]').textContent = fmtCoord(p.lat);
         card.querySelector('[data-field="lon"]').textContent = fmtCoord(p.lon);
-        card.querySelector('[data-field="rssi"]').textContent = String(rssi) + ' dBm';
-        card.querySelector('[data-field="vel"]').textContent = vel !== null ? String(vel) + ' km/h' : 'N/D';
-        card.querySelector('[data-field="temp"]').textContent = temp !== null ? String(temp) + ' °C' : 'N/D';
+        card.querySelector('[data-field="rssi"]').textContent = (p.rssi || '--') + ' dBm';
+        card.querySelector('[data-field="vel"]').textContent = (p.velocidad || 0) + ' km/h';
         card.querySelector('[data-field="ago"]').textContent = timeAgo(p.timestamp);
         list.appendChild(node);
       }
@@ -1520,11 +370,11 @@
     function updateMap() {
       filteredPositions.forEach(p => {
         const id = p.dispositivo_id || p.mid; if (!id) return;
-        const on = isOnline(p);
         const ll = [Number(p.lat), Number(p.lon)];
-        const icon = (selectedId === id) ? selectedIcon : (on ? onlineIcon : offlineIcon);
-        if (markers[id]) { markers[id].setLatLng(ll).setIcon(icon); }
-        else { markers[id] = L.marker(ll, { icon: icon }).addTo(map).on('click', () => focusDevice(id)); }
+        const state = selectedId === id ? 'selected' : (isOnline(p) ? 'online' : 'offline');
+        const icon = makeIcon(state);
+        if (markers[id]) markers[id].setLatLng(ll).setIcon(icon);
+        else markers[id] = L.marker(ll, { icon }).addTo(map).on('click', () => focusDevice(id));
       });
       Object.keys(markers).forEach(id => {
         if (!filteredPositions.some(p => (p.dispositivo_id || p.mid) === id)) { map.removeLayer(markers[id]); delete markers[id]; }
@@ -1534,499 +384,214 @@
     function focusDevice(id) {
       const p = allPositions.find(x => (x.dispositivo_id || x.mid) === id);
       if (!p) return;
-
       selectedId = id;
       map.setView([Number(p.lat), Number(p.lon)], 15);
       document.querySelectorAll('.device-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
       document.getElementById('sidebar').classList.remove('open');
-
+      
       const panel = document.getElementById('info-panel');
       panel.classList.add('open');
-
-      const on = isOnline(p);
-      const vel = p.velocidad ?? p.speed ?? null;
-      const temp = p.temperatura ?? p.temp ?? null;
-      const rssi = p.rssi ?? null;
-
-      const voltajeHtml = (p.voltaje != null) ? Number(p.voltaje).toFixed(2) + ' V' : 'N/D';
-      const sensoresHtml = p.estado_sensores || 'N/D';
-      const colorSensores = sensoresHtml.includes('FALLA') ? '#F43F5E' : '#22C55E';
-      const ago = timeAgo(p.timestamp);
-
-      // --- Cabecera (usando textContent, sin HTML → imposible romperlo) ---
+      
       document.getElementById('info-title').textContent = p.nombre || id;
-      document.getElementById('info-subtitle').textContent = 'ID: ' + id + '  ·  Fuente: ' + String(p.fuente || 'sms').toUpperCase() + '  ·  ' + ago;
-
-      document.getElementById('info-status').innerHTML =
-        '<span class="pill ' + (on ? 'on' : 'off') + '">' + (on ? 'EN LINEA' : 'FUERA DE LINEA') + '</span>'
-        + '<span class="pill neutral">Ult. actualizacion: ' + esc(ago) + '</span>';
-
-      // --- Contenido ---
-      document.getElementById('info-data').innerHTML = [
-        '<div><div class="section-label">UBICACION EN VIVO</div>',
-        '<div class="stat-grid" style="margin-top:8px">',
-        box('cyan', 'LATITUD', fmtCoord(p.lat), 'Grados decimales'),
-        box('cyan', 'LONGITUD', fmtCoord(p.lon), 'Grados decimales'),
-        box('', 'VELOCIDAD', vel !== null ? esc(String(vel)) + ' km/h' : 'SIN DATO', 'Instantanea'),
-        box('', 'TEMPERATURA', temp !== null ? esc(String(temp)) + ' &deg;C' : 'N/D', 'Sensor'),
-        box('', 'VOLTAJE', esc(voltajeHtml), 'Batería'),
-        boxColor('ESTADO SENSORES', esc(sensoresHtml), 'Diagnóstico', colorSensores),
-        box('', 'SENAL (RSSI)', rssi !== null ? esc(String(rssi)) + ' dBm' : 'N/D', 'Intensidad'),
-        boxColor('ESTADO', on ? 'EN LINEA' : 'FUERA', 'Ult. 15 min', on ? '#22C55E' : '#F43F5E'),
-        '</div></div>',
-
-        '<div><div class="section-label">ACCIONES</div>',
-        '<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">',
-        '<button class="btn-action btn-primary" data-action="gps">SOLICITAR ESTATUS REAL</button>',
-        '<button class="btn-action btn-outline" data-action="flota">VER TODA LA FLOTA</button>',
-        '<button class="btn-action btn-alert" data-action="raw">EXPORTAR LOGS CRUDOS (RAW)</button>',
-        '</div></div>',
-
-        '<div><div class="section-label">ACTIVIDAD RECIENTE</div>',
-        '<div class="timeline" style="margin-top:10px">',
-        '<div class="timeline-item"><b>Posicion actualizada</b><span>' + esc(ago) + ' — Lat ' + fmtCoord(p.lat) + ', Lon ' + fmtCoord(p.lon) + '</span></div>',
-        '<div class="timeline-item"><b>Sincronizado con el servidor</b><span>Canal: ' + esc(String(p.fuente || 'sms').toUpperCase()) + '</span></div>',
-        '</div></div>'
-      ].join('');
-
-      // --- Conectar acciones SIN strings inline ---
-      const data = document.getElementById('info-data');
-      data.querySelector('[data-action="gps"]')?.addEventListener('click', () => requestGpsUpdate(id));
-      data.querySelector('[data-action="flota"]')?.addEventListener('click', () => { centerOnFleet(); closePanel(); });
-
+      document.getElementById('info-subtitle').textContent = id + ' · ' + String(p.fuente || 'sms').toUpperCase();
+      
+      document.getElementById('info-data').innerHTML = `
+        <div><div class="section-label">TELEMETRÍA</div>
+        <div class="stat-grid" style="margin-top:10px">
+          <div class="stat-box"><label>LATITUD</label><b>${fmtCoord(p.lat)}</b></div>
+          <div class="stat-box"><label>LONGITUD</label><b>${fmtCoord(p.lon)}</b></div>
+          <div class="stat-box"><label>VELOCIDAD</label><b>${p.velocidad || 0} <span style="font-size:11px">km/h</span></b></div>
+          <div class="stat-box"><label>VOLTAJE</label><b>${p.voltaje || '--'} <span style="font-size:11px">V</span></b></div>
+          <div class="stat-box" style="grid-column: span 2"><label>SENSORES</label><b style="color:${(p.estado_sensores||'').includes('FALLA') ? 'var(--neon-red)' : 'var(--neon-green)'}">${p.estado_sensores || 'N/D'}</b></div>
+        </div></div>
+        <div><div class="section-label">ACCIONES</div>
+        <button class="btn-action btn-primary" style="margin-top:10px" onclick="requestGpsUpdate('${id}')">SOLICITAR ESTATUS</button>
+        </div>
+      `;
       updateMap();
       loadTimeHistory(id);
     }
 
-    // Helpers para reducir ruido en el template
-    function box(color, label, value, sub) {
-      return '<div class="stat-box ' + color + '"><label>' + label + '</label><b>' + value + '</b><span>' + sub + '</span></div>';
-    }
-    function boxColor(label, value, sub, color) {
-      return '<div class="stat-box"><label>' + label + '</label><b style="color:' + color + '">' + value + '</b><span>' + sub + '</span></div>';
-    }
-
     async function requestGpsUpdate(id) {
-      const p = allPositions.find(x => (x.dispositivo_id || x.mid) === id);
-      const nombre = p ? (p.nombre || id) : id;
-      // Fase 0: confirmación explícita antes de enviar un comando a un vehículo
-      if (!confirm('Enviar comando !R5 a "' + nombre + '" (' + id + ')?\nEsto envía un SMS al dispositivo.')) return;
+      if (!confirm('¿Enviar comando de estatus a ' + id + '?')) return;
       try {
         await api('/api/ntfy/send-sms', { method: 'POST', body: { deviceId: id, command: '!R5' } });
-        registrarAccion('!R5', { deviceId: id, nombre });
-        showAlert('Orden ntfy enviada para: ' + nombre, true);
-      } catch (e) { showAlert('Error backend: ' + e.message); }
+        showAlert('Comando enviado a ' + id, true);
+      } catch (e) { showAlert('Error: ' + e.message, false); }
     }
 
     function showAlert(msg, ok) {
-      const c = document.getElementById('alert-container');
       const el = document.createElement('div');
       el.className = 'alert-box' + (ok ? ' success' : '');
-      el.innerHTML = '<b>' + (ok ? 'OPERACION EXITOSA' : 'ALERTA') + '</b><div>' + esc(msg) + '</div>';
-      c.appendChild(el);
-      setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 6000);
+      el.innerHTML = `<b>${ok ? 'ÉXITO' : 'ALERTA'}</b><div>${msg}</div>`;
+      document.getElementById('alert-container').appendChild(el);
+      setTimeout(() => el.remove(), 5000);
     }
-
-    let lastSyncTime = Date.now();
 
     async function loadPositions() {
       try {
         const j = await api('/api/posiciones/latest');
-        let localData = Array.isArray(j) ? j : (j.rows || []);
-
-        // Ya NO hacemos la petición a /api/hubble/devices porque el backend unificado manda todo
-        allPositions = localData;
-
-        const attrib = document.getElementById('map-attrib');
-        if (attrib) {
-          attrib.textContent = allPositions.length > 0 ? allPositions.length + ' UNIDADES · ACT. ' + new Date().toLocaleTimeString('es-MX', { hour12: false }) : 'NEXUS-MITHRIL · SIN UNIDADES';
-        }
-
-        document.getElementById('api-status').textContent = 'EN LINEA';
-        document.getElementById('api-status').style.color = '#86EFAC';
-        if (typeof filterList === 'function') filterList();
-
+        allPositions = Array.isArray(j) ? j : (j.rows || []);
+        document.getElementById('api-status').textContent = 'EN LÍNEA';
+        filterList();
         if (!window._hasCentered && allPositions.length > 0) { centerOnFleet(); window._hasCentered = true; }
         if (selectedId) { const p = allPositions.find(x => (x.dispositivo_id || x.mid) === selectedId); if (p) focusDevice(selectedId); }
       } catch (e) {
-        document.getElementById('api-status').textContent = 'SIN CONEXION';
-        document.getElementById('api-status').style.color = '#FDA4AF';
+        document.getElementById('api-status').textContent = 'SIN CONEXIÓN';
       }
+    }
+
+    function renderFleetTable() {
+      const tb = document.getElementById('fleet-grid-body');
+      if (!filteredPositions.length) {
+        tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No hay dispositivos en la flota.</td></tr>';
+        return;
+      }
+      let html = '';
+      filteredPositions.forEach(p => {
+        const id = p.dispositivo_id || p.mid || '';
+        const isOn = isOnline(p);
+        html += '<tr>';
+        html += `<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOn ? 'var(--neon-green)' : 'var(--muted)'}"></span> ${isOn ? 'ONLINE' : 'OFFLINE'}</td>`;
+        html += `<td><b style="color:var(--neon-cyan)">${p.nombre || id}</b><br><small style="color:var(--muted)">${id}</small></td>`;
+        html += `<td>${String(p.fuente || 'sms').toUpperCase()}</td>`;
+        html += `<td>${Number(p.lat).toFixed(6)}, ${Number(p.lon).toFixed(6)}</td>`;
+        html += `<td>${p.velocidad || 0} km/h</td>`;
+        html += `<td>${p.voltaje != null ? p.voltaje + ' V' : 'N/D'}</td>`;
+        html += `<td><span style="color:${(p.estado_sensores || '').includes('FALLA') ? 'var(--neon-red)' : 'var(--neon-green)'}">${p.estado_sensores || 'N/D'}</span></td>`;
+        html += `<td>${new Date(p.timestamp).toLocaleString('es-MX')}</td>`;
+        html += `<td><button class="tool-btn" style="height:28px; font-size:10px" onclick="showMapView(); focusDevice('${id}')">Ver en Mapa</button></td>`;
+        html += '</tr>';
+      });
+      tb.innerHTML = html;
+    }
+
+    async function exportarRaw() {
+      const btn = document.getElementById('btn-export-raw');
+      const format = document.getElementById('export-format').value;
+      btn.disabled = true; btn.textContent = '⏳ Exportando...';
+      const device = currentSearch ? encodeURIComponent(currentSearch) : '';
+      const qs = new URLSearchParams({ format, limit: '5000' });
+      if (device) qs.set('device', currentSearch);
+      try {
+        const res = await fetch('/api/export/raw?' + qs.toString());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'raw-data-' + new Date().toISOString().slice(0,10) + '.' + format;
+        a.click(); URL.revokeObjectURL(url);
+      } catch(e) { showAlert('Error exportando: ' + e.message, false); }
+      finally { btn.disabled = false; btn.textContent = '⤓ Exportar Raw'; }
     }
 
     async function loadTimeHistory(deviceId) {
       const info = document.getElementById('ts-info');
       try {
-        let device = deviceId || selectedId || '';
-        const qs = device ? '?device=' + encodeURIComponent(device) + '&limit=200' : '?limit=200';
+        const qs = deviceId ? '?device=' + encodeURIComponent(deviceId) + '&limit=200' : '?limit=200';
         const j = await api('/api/posiciones/history' + qs);
-        if (deviceId && selectedId && deviceId !== selectedId) return;
         timeHistory = Array.isArray(j) ? j.slice().reverse() : [];
         const range = document.getElementById('ts-range');
         range.max = Math.max(0, timeHistory.length - 1);
         range.value = timeHistory.length ? timeHistory.length - 1 : 0;
-        if (timeHistory.length) {
-          timeIdx = timeHistory.length - 1;
-          showTimePoint(timeIdx);
-          if (info) info.textContent = 'Recorrido cargado: ' + timeHistory.length + ' puntos · ' + device;
-        } else if (info) info.textContent = 'Sin historial para ' + (device || 'esta unidad');
-      } catch (e) { if (info) info.textContent = 'No se pudo cargar el historial'; }
+        if (timeHistory.length) { timeIdx = timeHistory.length - 1; showTimePoint(timeIdx); info.textContent = 'Puntos: ' + timeHistory.length; }
+        else info.textContent = 'Sin historial';
+      } catch (e) { info.textContent = 'Error cargando historial'; }
     }
+
     function showTimePoint(i) {
       if (!timeHistory.length) return;
-      const p = timeHistory[i]; const lat = Number(p.lat), lon = Number(p.lon);
+      const p = timeHistory[i];
       const info = document.getElementById('ts-info');
-      if (info) info.textContent = (p.timestamp || p.ts || '') + '  ·  ' + (p.dispositivo_id || p.device || '') + '  ·  Lat ' + lat.toFixed(5) + ' Lon ' + lon.toFixed(5) + '  ·  ' + (i + 1) + '/' + timeHistory.length;
-      if (window.NEXUS_MAP && window.L) {
-        if (!timeMarker) { timeMarker = L.marker([lat, lon], { icon: selectedIcon }).addTo(window.NEXUS_MAP); }
-        else timeMarker.setLatLng([lat, lon]);
-      }
+      info.textContent = new Date(p.timestamp).toLocaleString() + ' · Lat ' + Number(p.lat).toFixed(5);
+      if (!timeMarker) timeMarker = L.marker([p.lat, p.lon], { icon: makeIcon('selected') }).addTo(map);
+      else timeMarker.setLatLng([p.lat, p.lon]);
     }
+
     function toggleTimePlay() {
       const btn = document.getElementById('ts-play');
-      if (timePlaying) { stopTimePlay(); return; }
+      if (timePlaying) { clearInterval(timeTimer); timePlaying = false; btn.textContent = 'PLAY'; return; }
       if (!timeHistory.length) return;
       timePlaying = true; btn.textContent = 'PAUSA';
       timeTimer = setInterval(() => {
         timeIdx = (timeIdx + 1) % timeHistory.length;
         document.getElementById('ts-range').value = timeIdx;
         showTimePoint(timeIdx);
-        if (timeIdx === timeHistory.length - 1) stopTimePlay();
       }, 500);
     }
-    function stopTimePlay() { timePlaying = false; if (timeTimer) clearInterval(timeTimer); const b = document.getElementById('ts-play'); if (b) b.textContent = 'PLAY'; }
-    function goLive() { stopTimePlay(); loadPositions(); if (selectedId) loadTimeHistory(selectedId); else loadTimeHistory(); }
-    document.getElementById('ts-range').addEventListener('input', (e) => { timeIdx = parseInt(e.target.value, 10) || 0; stopTimePlay(); showTimePoint(timeIdx); });
 
-    function showConfigView() {
-      document.getElementById('config-view').style.display = 'flex';
-      document.querySelector('.map-wrap').style.display = 'none';
+    function goLive() { clearInterval(timeTimer); timePlaying = false; document.getElementById('ts-play').textContent = 'PLAY'; loadPositions(); }
+    document.getElementById('ts-range').addEventListener('input', (e) => { timeIdx = parseInt(e.target.value); showTimePoint(timeIdx); });
+
+    function showMapView() {
+      document.getElementById('config-view').style.display = 'none';
+      document.getElementById('fleet-grid-view').style.display = 'none';
+      document.querySelector('.sidebar').style.display = 'flex';
+      document.querySelector('.map-wrap').style.display = 'flex';
+      document.getElementById('btn-map-view').classList.add('active');
+      document.getElementById('btn-fleet-view').classList.remove('active');
+      map.invalidateSize();
+    }
+    
+    function showFleetView() {
+      document.getElementById('config-view').style.display = 'none';
+      document.getElementById('fleet-grid-view').style.display = 'block';
       document.querySelector('.sidebar').style.display = 'none';
-      document.getElementById('fleet-grid-view').classList.remove('active');
-      document.getElementById('info-panel').classList.remove('open');
+      document.querySelector('.map-wrap').style.display = 'none';
       document.getElementById('btn-map-view').classList.remove('active');
-      document.getElementById('btn-list-view').classList.remove('active');
+      document.getElementById('btn-fleet-view').classList.add('active');
+      renderFleetTable();
+    }
+    
+    function showConfigView() {
+      document.getElementById('config-view').style.display = 'block';
+      document.getElementById('fleet-grid-view').style.display = 'none';
+      document.querySelector('.sidebar').style.display = 'none';
+      document.querySelector('.map-wrap').style.display = 'none';
+      document.getElementById('btn-map-view').classList.remove('active');
+      document.getElementById('btn-fleet-view').classList.remove('active');
       api('/api/config').then(d => {
         if (d.orgId) document.getElementById('cfg-org-id').value = d.orgId;
         if (d.hasApiKey) document.getElementById('cfg-api-key').placeholder = "******** (Guardado)";
       }).catch(e => console.warn(e));
     }
+    
     async function saveHubbleConfig() {
       const apiKey = document.getElementById('cfg-api-key').value.trim();
       const orgId = document.getElementById('cfg-org-id').value.trim();
       const status = document.getElementById('config-status');
-      status.innerHTML = "Guardando..."; status.style.color = "var(--amber)";
+      status.innerHTML = "Guardando..."; status.style.color = "var(--neon-amber)";
       try {
         await api('/api/config', { method: 'POST', body: { apiKey, orgId } });
-        status.innerHTML = "✅ Credenciales guardadas correctamente."; status.style.color = "var(--green)";
-      } catch (e) { status.innerHTML = "❌ Error: " + e.message; status.style.color = "var(--red)"; }
+        status.innerHTML = "✅ Credenciales guardadas correctamente."; status.style.color = "var(--neon-green)";
+      } catch (e) { status.innerHTML = "❌ Error: " + e.message; status.style.color = "var(--neon-red)"; }
     }
+    
     async function registerHubbleWebhook() {
       const status = document.getElementById('config-status');
-      status.innerHTML = "Registrando Webhook en Hubble..."; status.style.color = "var(--amber)";
-      const currentUrl = window.location.origin + '/api/hubble/webhook';
+      status.innerHTML = "Registrando Webhook en Hubble..."; status.style.color = "var(--neon-amber)";
       try {
-        await api('/api/config/webhook', { method: 'POST', body: { targetUrl: currentUrl } });
-        status.innerHTML = "✅ Webhook registrado y secreto guardado correctamente."; status.style.color = "var(--green)";
-      } catch (e) { status.innerHTML = "❌ Error: " + e.message; status.style.color = "var(--red)"; }
+        await api('/api/config/webhook', { method: 'POST', body: { targetUrl: window.location.origin + '/api/hubble/webhook' } });
+        status.innerHTML = "✅ Webhook registrado y secreto guardado."; status.style.color = "var(--neon-green)";
+      } catch (e) { status.innerHTML = "❌ Error: " + e.message; status.style.color = "var(--neon-red)"; }
     }
 
-    function showFleetView() {
-      document.getElementById('config-view').style.display = 'none';
-      document.getElementById('fleet-grid-view').classList.add('active');
-      document.querySelector('.sidebar').style.display = 'none';
-      document.querySelector('.map-wrap').style.display = 'none';
-      document.getElementById('btn-map-view').classList.remove('active');
-      document.getElementById('btn-list-view').classList.add('active');
-      document.getElementById('info-panel').classList.remove('open');
-      renderFleetTable();
-    }
-    function showMapView() {
-      document.getElementById('config-view').style.display = 'none';
-      document.getElementById('fleet-grid-view').classList.remove('active');
-      document.querySelector('.sidebar').style.display = 'flex';
-      document.querySelector('.map-wrap').style.display = 'flex';
-      document.getElementById('btn-map-view').classList.add('active');
-      document.getElementById('btn-list-view').classList.remove('active');
-      document.getElementById('info-panel').classList.remove('open');
-      if (window.NEXUS_MAP) window.NEXUS_MAP.invalidateSize();
-    }
-    function renderFleetTable() {
-      var tb = document.getElementById('fleet-grid-body');
-      if (!tb) return;
-      if (!allPositions.length) {
-        tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No hay dispositivos en la flota.</td></tr>';
-        return;
-      }
-      var html = '';
-      for (var i = 0; i < allPositions.length; i++) {
-        var p = allPositions[i];
-        var id = p.dispositivo_id || p.mid || '';
-        var isOn = isOnline(p);
-        var rssi = p.rssi != null ? p.rssi : null;
-        var pct = rssi != null ? Math.max(0, Math.min(100, ((rssi + 120) / 50) * 100)) : 0;
-        var col = rssi === null ? 'var(--muted)' : rssi < -90 ? 'var(--red)' : rssi < -75 ? 'var(--amber)' : 'var(--green)';
-        var temp = p.temperatura != null ? p.temperatura : null;
-        html += '<tr>';
-        html += '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (isOn ? 'var(--green)' : 'var(--muted2)') + '"></span> ' + (isOn ? 'ONLINE' : 'OFFLINE') + '</td>';
-        html += '<td><b style="color:var(--cyan)">' + (p.nombre || id) + '</b><br><small style="color:var(--muted)">' + id + '</small></td>';
-        html += '<td>' + String(p.fuente || 'sms').toUpperCase() + '</td>';
-        html += '<td>' + Number(p.lat).toFixed(6) + ', ' + Number(p.lon).toFixed(6) + '</td>';
-        html += '<td>' + (p.velocidad != null ? p.velocidad : '0') + ' km/h</td>';
-        html += '<td>' + (p.voltaje != null ? p.voltaje + ' V' : 'N/D') + '</td>';
-        html += '<td><span style="color:' + ((p.estado_sensores || '').includes('FALLA') ? 'var(--red)' : 'var(--green)') + '">' + (p.estado_sensores || 'N/D') + '</span></td>';
-        html += '<td>' + new Date(p.timestamp).toLocaleString('es-MX') + '</td>';
-        html += '<td><button class="btn-row" data-id="' + esc(id) + '">Ver en Mapa</button></td>';
-        html += '</tr>';
-      }
-      tb.innerHTML = html;
-    }
-
-    function exportarCSV() {
-      if (!allPositions.length) { showAlert('No hay datos para exportar', false); return; }
-      // CORREGIDO v2: Blob en vez de data: URI (falla con datos grandes / caracteres especiales)
-      const headers = ['ID','Nombre','Fuente','Latitud','Longitud','Velocidad','Voltaje','Sensores','Fecha'];
-      const esc = (v) => { const s = String(v ?? ''); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const lines = [headers.join(',')];
-      allPositions.forEach(p => {
-        lines.push([p.dispositivo_id || p.mid || '', p.nombre || '', p.fuente || 'sms', p.lat || 0, p.lon || 0, p.velocidad || 0, p.voltaje || '', p.estado_sensores || '', p.timestamp || ''].map(esc).join(','));
-      });
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'reporte_flota_' + new Date().toISOString().slice(0,10) + '.csv';
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showAlert('Archivo CSV descargado', true);
-    }
-
-    // NUEVO v2: Exportar Raw Data desde el servidor (historial completo, no solo lo visible)
-    // Usa /api/export/raw?format=csv|json|txt&device=&limit=
-    async function exportarRaw() {
-      const statusEl = document.getElementById('export-status');
-      const btnEl = document.getElementById('btn-export-raw');
-      const format = (document.getElementById('export-format')?.value || 'csv').toLowerCase();
-      if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Exportando...'; }
-      // Si hay un filtro de búsqueda, usarlo como device. Si no, todo.
-      const searchVal = (document.getElementById('search-input')?.value || '').trim();
-      const device = searchVal ? encodeURIComponent(searchVal) : '';
-      const qs = new URLSearchParams({ format, limit: '5000' });
-      if (device) qs.set('device', searchVal);
-      if (statusEl) { statusEl.textContent = 'Exportando...'; statusEl.className = 'busy'; statusEl.id = 'export-status'; }
-      try {
-        const res = await fetch('/api/export/raw?' + qs.toString(), { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const blob = await res.blob();
-        const cd = res.headers.get('Content-Disposition') || '';
-        const m = cd.match(/filename="?([^";]+)"?/);
-        const filename = m ? m[1] : ('raw-data-' + new Date().toISOString().slice(0,10) + '.' + format);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url; link.download = filename;
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        if (statusEl) { statusEl.textContent = '✓ Listo: ' + filename; statusEl.className = 'ok'; }
-        showAlert('Raw exportado: ' + filename, true);
-      } catch (e) {
-        if (statusEl) { statusEl.textContent = '✕ Error: ' + e.message; statusEl.className = 'err'; }
-        showAlert('Error exportando raw: ' + e.message, false);
-      } finally { if (btnEl) { btnEl.disabled = false; btnEl.textContent = '⤓ Exportar Raw'; } }
-    }
-
-
-    // --- Delegación de eventos (se registra UNA sola vez, sin onclick inline) ---
-    // Lista lateral: click en cualquier .device-item abre su detalle
     document.getElementById('device-list').addEventListener('click', e => {
-      const item = e.target.closest ? e.target.closest('.device-item') : null;
+      const item = e.target.closest('.device-item');
       if (item) focusDevice(item.dataset.id);
     });
-    // Tabla de flota: click en "Ver en Mapa"
-    document.getElementById('fleet-grid-body').addEventListener('click', e => {
-      const b = e.target.closest ? e.target.closest('.btn-row[data-id]') : null;
-      if (b) { showMapView(); focusDevice(b.dataset.id); }
-    });
 
-
-    // ===== FASE 2: TIEMPO REAL VÍA WEBSOCKETS =====
     function connectWebSocket() {
-      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(proto + '//' + location.host + '/ws');
-
-      ws.onopen = () => {
-        console.log('[WS] Conectado al backend en tiempo real.');
-        document.getElementById('api-status').textContent = 'EN VIVO';
-        document.getElementById('api-status').style.color = '#22C55E';
-      };
-
+      const ws = new WebSocket((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws');
       ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          // Si el backend avisa de una nueva telemetría o un cruce de geocerca
-          if (msg.type === 'telemetria' || msg.type === 'geofence') {
-            // Volvemos a pedir las posiciones inmediatamente
-            loadPositions();
-          }
-        } catch (e) { console.warn('WS error parsing:', e); }
+        try { const msg = JSON.parse(event.data); if (msg.type === 'telemetria' || msg.type === 'geofence') loadPositions(); } catch (e) {}
       };
-
-      ws.onclose = () => {
-        console.log('[WS] Desconectado. Reconectando en 5s...');
-        document.getElementById('api-status').textContent = 'RECONECTANDO';
-        document.getElementById('api-status').style.color = '#F59E0B';
-        setTimeout(connectWebSocket, 2000);
-      };
-
-      ws.onerror = (err) => {
-        console.warn('[WS] Error de socket:', err);
-      };
+      ws.onclose = () => setTimeout(connectWebSocket, 3000);
     }
-
-
-    
-    window.exportRawData = async function(deviceId) {
-        try {
-            const res = await fetch(`/api/device/${deviceId}/raw-sms`);
-            const data = await res.json();
-            if (!Array.isArray(data)) { alert('El servidor devolvió un error: ' + JSON.stringify(data)); return; }
-            if (data.length === 0) { alert('No hay tramas crudas registradas para este equipo todavía.'); return; }
-            let fileContent = `=== RAW SMS DATA PARA ${deviceId} ===\n\n`;
-            data.forEach(r => { fileContent += `[${r.timestamp}]\n${r.texto}\n\n${'-'.repeat(50)}\n\n`; });
-            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `raw_sms_${deviceId}.txt`; a.click(); URL.revokeObjectURL(url);
-        } catch (err) { console.error(err); alert('Error de red descargando los datos.'); }
-    };
-
-    
-    window.toggleSystemPower = async function() {
-        const btn = document.getElementById('btn-power');
-        if (!btn) return;
-        
-        // Determinamos si estamos apagando o encendiendo basándonos en el texto
-        const isCurrentlyPaused = btn.innerText.trim() === 'ENCENDER';
-        const action = isCurrentlyPaused ? 'resume' : 'pause';
-        
-        try {
-            const res = await api('/api/system/toggle', { method: 'POST', body: { action } });
-            updatePowerButton(res.paused);
-            
-            // Forzar la recarga del mapa para que se limpien o aparezcan las unidades
-            if (typeof loadPositions === 'function') loadPositions();
-            
-        } catch(e) {
-            alert('Error cambiando estado: ' + e.message);
-        }
-    };
-
-    function updatePowerButton(isPaused) {
-        const btn = document.getElementById('btn-power');
-        if (!btn) return;
-        if (isPaused) {
-            btn.innerText = 'ENCENDER';
-            btn.style.backgroundColor = '#22C55E';
-            btn.style.color = '#fff';
-            btn.style.borderColor = '#22C55E';
-        } else {
-            btn.innerText = 'APAGAR';
-            btn.style.backgroundColor = 'transparent';
-            btn.style.color = '#F43F5E';
-            btn.style.borderColor = '#3A1A22';
-        }
-    }
-    
-    // Verificar estado inicial al cargar la página
-    setTimeout(() => {
-        if (typeof api === 'function') {
-            api('/api/system/status').then(res => updatePowerButton(res.paused)).catch(()=>{});
-        }
-    }, 1000);
-
 
     loadPositions();
-    setInterval(loadPositions, 2000);
-  </script>
-<script src="/osiris-layers.js"></script>
-  <script>
-    // CAPA OSINT: SISMOS EN VIVO (USGS)
-    let capaSismos = null;
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      const btnSismos = document.getElementById('btn-usgs-quakes');
-      if (btnSismos) {
-        btnSismos.addEventListener('click', async () => {
-          if (!window.NEXUS_MAP) return;
-          
-          btnSismos.innerText = 'Cargando...';
-          btnSismos.disabled = true;
-          
-          try {
-            const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson');
-            const data = await res.json();
-            
-            if (capaSismos) window.NEXUS_MAP.removeLayer(capaSismos);
-            
-            capaSismos = L.geoJSON(data, {
-              pointToLayer: function (feature, latlng) {
-                const mag = feature.properties.mag || 0;
-                let color = '#10B981'; // Verde (Bajo)
-                let radius = 4;
-                if (mag >= 4.5) { color = '#EF4444'; radius = 8; } // Rojo (Fuerte)
-                else if (mag >= 2.5) { color = '#F59E0B'; radius = 6; } // Naranja (Medio)
-                
-                return L.circleMarker(latlng, {
-                  radius: radius,
-                  fillColor: color,
-                  color: '#fff',
-                  weight: 1,
-                  opacity: 1,
-                  fillOpacity: 0.8
-                });
-              },
-              onEachFeature: function (feature, layer) {
-                if (feature.properties && feature.properties.place) {
-                  layer.bindPopup('<b>🌎 Sismo M' + feature.properties.mag + '</b><br>' + feature.properties.place);
-                }
-              }
-            }).addTo(window.NEXUS_MAP);
-            
-            // Opcional: Hacer zoom a la zona con más sismos (o solo avisar)
-            if (data.features.length > 0) {
-              window.NEXUS_MAP.fitBounds(capaSismos.getBounds(), { padding: [50, 50] });
-            }
-            
-            btnSismos.innerText = '🌎 SISMOS (ON)';
-            btnSismos.style.backgroundColor = '#F59E0B';
-            btnSismos.style.color = '#000';
-          } catch (err) {
-            console.error('Error cargando USGS:', err);
-            btnSismos.innerText = 'Error USGS';
-          } finally {
-            btnSismos.disabled = false;
-          }
-        });
-      }
-    });
+    setInterval(loadPositions, 5000);
+    connectWebSocket();
   </script>
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
