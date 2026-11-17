@@ -30,3 +30,13 @@ Modulo_Ingesta_*/
 # Sistema
 .DS_Store
 Thumbs.db
+_archive
+telemetry_history
+nexus_history.db
+*.bak*
+_sync_reports
+.git.bak*
+mejoras/
+_archive*
+telemetry_history*
+*.jsonl
