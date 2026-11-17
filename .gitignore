@@ -40,3 +40,5 @@ mejoras/
 _archive*
 telemetry_history*
 *.jsonl
+*_bak*
+*maestro_bak*
